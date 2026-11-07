@@ -24,6 +24,9 @@ Track completion here. Owners must be named people (not roles only).
 - [x] ERPNext/Frappe versions proposed (`docs/stack-versions.md`)  
 - [ ] Exact tags confirmed on install  
 - [ ] GTM-0 marketing site: yes / no decision  
+- [x] DEC-11 design lock accepted (Jobber/Procore + Element Plus + Flutter M3)  
+- [ ] Figma CIP foundations started  
+- [ ] Design Gate approver named (default: product sponsor)  
 - [ ] SP-01 started on sandbox (`docs/spikes/SP-01-cost-billing.md`)  
 
 ## Experiments queue

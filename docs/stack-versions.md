@@ -12,8 +12,8 @@
 | Node | Per Frappe asset build requirement | For Desk builds only |
 | Redis | Per bench defaults | Cache + queue |
 | Construction app | `apps/construction` (this repo) | Custom DocTypes — no core forks |
-| Ops web | TBD after R0 UI spike (Vue candidate) | Desk kept for finance/admin |
-| Mobile | Flutter candidate; RN alternative | Decide after SP-02 |
+| Ops web | **Vue 3 + Element Plus** + CIP tokens (DEC-11) | Desk kept for finance/admin |
+| Mobile | **Flutter + Material 3** themed (DEC-11); RN only if SP-02 fails Flutter | Confirm after SP-02 |
 
 ## Decision rule
 - Record exact git tags/SHAs used in the sandbox in the evidence register (SP-01 row).  

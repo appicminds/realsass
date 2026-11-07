@@ -14,4 +14,4 @@ Status values: `NOT STARTED` · `IN PROGRESS` · `PASS` · `FAIL` · `ACCEPTED S
 | SP-06 | Commercial feasibility | | | | | | | | | NOT STARTED | Cost worksheet |
 | UAT-01 | MET A/C/U fixture | | | | | | | | | NOT STARTED | After R1 cost engine |
 | UAT-03 | Billing allocation race | | | | | | | | | NOT STARTED | After R1 billing |
-| DEC-11 | Design references + component library lock | | | | | | | | | NOT STARTED | Answer checklist in DESIGN_APPROACH.md |
+| DEC-11 | Design references + component library lock | Sponsor chat accept 07 Nov 2026 | Decision record | N/A | Jobber+Procore refs; Vue/Element Plus; Flutter M3; Atlantis rejected | — | docs/decisions/DEC-11-design-system.md | Product | Sponsor | ACCEPTED | Open Figma foundations + name Design Gate approver |
