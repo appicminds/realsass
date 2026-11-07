@@ -1,6 +1,7 @@
 # Professional Design Approach (mandatory)
 
 **Status:** **ACCEPTED** via [DEC-11](./decisions/DEC-11-design-system.md) — 07 November 2026 (Asia/Karachi)  
+**Figma file:** [CIP Design System](https://www.figma.com/design/yoTMDkmw6OQZr6d8xhqPeB) (`yoTMDkmw6OQZr6d8xhqPeB`) · team: Freelance Projects  
 **Rule:** No production UI until the Design Gate passes. No freestyle UI in code.
 
 ---

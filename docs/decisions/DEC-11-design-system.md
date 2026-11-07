@@ -36,7 +36,11 @@ Per PRD §12.1: neutrals, deep-teal actions, semantic states, tabular figures, 4
 - Post-gate visual changes require Figma update first, then code.  
 - No freestyle hex/spacing/components outside the kit.
 
+## Figma
+- File: https://www.figma.com/design/yoTMDkmw6OQZr6d8xhqPeB  
+- Includes: Cover, Color + Type/Space foundations, Button component, Screens / Design Gate (5 screens)
+
 ## Next actions
-1. Open Figma file for CIP foundations + 5 key screens.  
+1. Sponsor reviews **Screens / Design Gate** in Figma and signs the gate.  
 2. Name Design Gate approver on `docs/r0-kickoff-checklist.md` if not the sponsor.  
 3. Continue R0 engineering (sandbox, SP-01) in parallel — no visual freestyle.  
