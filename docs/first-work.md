@@ -10,17 +10,20 @@
 | 2 | Pin ERPNext/Frappe candidates | 1.3 | Tech lead |
 | 3 | Construction app skeleton in `apps/construction` | 1.3 | Engineering (started) |
 | 4 | Evidence register + kickoff checklist in use | 1.5 | Product + QA |
-| 5 | Stand up sandbox (bench/docker on a machine with Docker) | 1.2, 1.3 | DevOps / tech lead |
-| 6 | Load finance fixtures → run **SP-01** | SP-01 | ERP + finance/QS |
-| 7 | Clickable flows → **SP-05** | SP-05 | UX + ops |
-
+| 5 | **Lock design references + component library** (`docs/DESIGN_APPROACH.md`) | DEC-11 | Sponsor + product |
+| 6 | Stand up sandbox (bench/docker on a machine with Docker) | 1.2, 1.3 | DevOps / tech lead |
+| 7 | Load finance fixtures → run **SP-01** | SP-01 | ERP + finance/QS |
+| 8 | Figma foundations + 5 key screens → Design Gate | D1–D2 | Design + sponsor |
+| 9 | Clickable flows → **SP-05** (only after Design Gate) | SP-05 | UX + ops |
 ## Not first
-- Full BOQ/billing product UI  
+- Freestyle UI / inventing screens without references  
+- Full BOQ/billing product UI before Design Gate  
 - Production mobile  
 - AI  
 - Large marketing website  
 - Multi-country packs content  
 
+**Design rule:** see `docs/DESIGN_APPROACH.md` — reference apps + component library + Figma gate before UI code.
 ## You need to provide
 1. Named owners on `docs/r0-kickoff-checklist.md`  
 2. A host/VM **with Docker** (or existing bench) for the ERPNext sandbox — this cloud agent image has no Docker daemon right now  

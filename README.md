@@ -24,6 +24,7 @@ Right now in this repo:
 | [Whole software WBS](./WHOLE_SOFTWARE_BUILD_PLAN.md) | 18 steps · 96 tasks · 5 phases |
 | [Release plan](./RELEASE_PLAN.md) | R0→R4 task mapping |
 | [First work](./docs/first-work.md) | **Start here for execution** |
+| [Design approach](./docs/DESIGN_APPROACH.md) | References + design system + Design Gate (no freestyle UI) |
 | [Stack versions](./docs/stack-versions.md) | ERPNext/Frappe pin candidates |
 | [Evidence register](./docs/evidence-register.md) | VAL / SP / UAT log |
 | [R0 checklist](./docs/r0-kickoff-checklist.md) | Owners & exit gate |

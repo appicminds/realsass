@@ -14,3 +14,4 @@ Status values: `NOT STARTED` · `IN PROGRESS` · `PASS` · `FAIL` · `ACCEPTED S
 | SP-06 | Commercial feasibility | | | | | | | | | NOT STARTED | Cost worksheet |
 | UAT-01 | MET A/C/U fixture | | | | | | | | | NOT STARTED | After R1 cost engine |
 | UAT-03 | Billing allocation race | | | | | | | | | NOT STARTED | After R1 billing |
+| DEC-11 | Design references + component library lock | | | | | | | | | NOT STARTED | Answer checklist in DESIGN_APPROACH.md |
