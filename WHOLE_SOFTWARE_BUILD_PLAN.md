@@ -350,8 +350,9 @@ These are **phases inside tasks**, not separate steps:
 
 ## Next planning action (your request order)
 
-1. **Now (done in this file):** whole software WBS = 18 steps / 96 tasks / 5 phases each  
-2. **Next (when you say so):** release plan that **selects and sequences** these tasks into R0 / R1 / R2 / R3 / R4 / GTM without inventing a second scope  
+1. **Done:** whole software WBS = 18 steps / 96 tasks / 5 phases each  
+2. **Done:** release plan that selects and sequences these tasks — see `RELEASE_PLAN.md`  
+3. **Now executing:** R0 kickoff (owners, evidence register, foundation tasks 1.1–1.5)
 
 ---
 
@@ -361,4 +362,5 @@ These are **phases inside tasks**, not separate steps:
 |---|---|
 | `Construction_AI_ERP_Focused_Scope_PRD_v4.1.docx` | Requirements authority |
 | `WHOLE_SOFTWARE_BUILD_PLAN.md` | Full software WBS (this file) |
-| `DEVELOPMENT_PLAN.md` | Earlier release-oriented program notes (to be reconciled after release mapping) |
+| `RELEASE_PLAN.md` | Which WBS tasks ship in R0–R4 / GTM |
+| `DEVELOPMENT_PLAN.md` | Narrative program notes (use with release map) |
