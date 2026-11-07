@@ -25,7 +25,7 @@ Track completion here. Owners must be named people (not roles only).
 - [ ] Exact tags confirmed on install  
 - [ ] GTM-0 marketing site: yes / no decision  
 - [x] DEC-11 design lock accepted (Jobber/Procore + Element Plus + Flutter M3)  
-- [x] Figma CIP file created + foundations + 5 Design Gate screens  
+- [x] Figma CIP-SASS file (Untitled UI free kit, CIP teal) + 5 Design Gate screens drafted on page CIP Screens  
 - [ ] Design Gate **signed** by sponsor (review Figma Screens page)  
 - [ ] Design Gate approver named (default: product sponsor)  
 - [ ] SP-01 started on sandbox (`docs/spikes/SP-01-cost-billing.md`)  

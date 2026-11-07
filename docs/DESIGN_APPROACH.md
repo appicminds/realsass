@@ -1,7 +1,8 @@
 # Professional Design Approach (mandatory)
 
 **Status:** **ACCEPTED** via [DEC-11](./decisions/DEC-11-design-system.md) — 07 November 2026 (Asia/Karachi)  
-**Figma file:** [CIP Design System](https://www.figma.com/design/yoTMDkmw6OQZr6d8xhqPeB) (`yoTMDkmw6OQZr6d8xhqPeB`) · team: Freelance Projects  
+**Figma file (current):** [CIP-SASS](https://www.figma.com/design/nW0n4I3aarR2CqvEt9d9ZY/CIP-SASS) (`nW0n4I3aarR2CqvEt9d9ZY`) — Untitled UI free kit copy, re-themed to CIP teal; Design Gate screens on page **CIP Screens** · team: Freelance Projects  
+**Superseded:** [CIP Design System](https://www.figma.com/design/yoTMDkmw6OQZr6d8xhqPeB) (wireframe pass, rejected by sponsor)  
 **Rule:** No production UI until the Design Gate passes. No freestyle UI in code.
 
 ---
