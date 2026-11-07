@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Node
+node_modules/
+dist/
+.cache/
+
+# Frappe / bench
+sites/*/private/
+sites/*/public/files/
+sites/*/locks/
+sites/*/task-logs/
+sites/*/logs/
+*.pyc
+*.log
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Test / coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Local secrets
+secrets/
+*.pem
+*.key

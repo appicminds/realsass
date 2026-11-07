@@ -1,16 +1,12 @@
 # Applications
 
-R0/R1 code lands here after version pinning.
-
-Planned layout:
-
 ```text
 apps/
-  construction/     # Frappe construction domain app (custom DocTypes/services)
-  ops_web/          # Operations web UI (employee/commercial)
+  construction/     # Frappe app skeleton — ACTIVE (R0 task 1.3)
+  ops_web/          # Operations web UI (after R0 UI spike)
   control_plane/    # SaaS / license admin (R2 weighting)
-  mobile/           # iOS + Android (Flutter candidate; confirm in R0)
+  mobile/           # iOS + Android (after SP-02 / framework decision)
 ```
 
-Do not implement production modules until R0 go-decision for that area.  
-Skeleton only after tech lead pins ERPNext/Frappe versions (RELEASE_PLAN §9).
+`construction` is installable into a bench site once ERPNext/Frappe are pinned (`docs/stack-versions.md`).  
+No money DocTypes until SP-01 design lock.

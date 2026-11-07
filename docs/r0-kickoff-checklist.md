@@ -16,12 +16,15 @@ Track completion here. Owners must be named people (not roles only).
 ## This week
 
 - [ ] Owners assigned above  
-- [ ] Evidence register in use (`docs/evidence-register.md`)  
-- [ ] WBS 1.1–1.5 foundation underway  
+- [x] Evidence register created (`docs/evidence-register.md`)  
+- [x] WBS 1.1 / 1.3 / 1.4 / 1.5 started in repo (skeleton + CI + docs)  
+- [ ] Sandbox host with Docker/bench available (1.2)  
 - [ ] At least 2 pilot prospects contacted for VAL-01  
 - [ ] Sanitized BOQ / cost / certificate samples requested  
-- [ ] ERPNext/Frappe versions proposed (pin candidate)  
+- [x] ERPNext/Frappe versions proposed (`docs/stack-versions.md`)  
+- [ ] Exact tags confirmed on install  
 - [ ] GTM-0 marketing site: yes / no decision  
+- [ ] SP-01 started on sandbox (`docs/spikes/SP-01-cost-billing.md`)  
 
 ## Experiments queue
 

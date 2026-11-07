@@ -3,28 +3,42 @@
 International construction ERP (SaaS + standalone) with web, iOS, and Android.  
 Foundation: ERPNext / Frappe + construction app + optional isolated AI.
 
-## Planning docs (start here)
+## What we are doing first
+
+**R0 foundation → SP-01**  
+See **[docs/first-work.md](./docs/first-work.md)** for the ordered list.
+
+Right now in this repo:
+1. Planning docs (WBS + release map)  
+2. Construction Frappe app **skeleton** (`apps/construction`)  
+3. CI foundation checks  
+4. SP-01 spike design  
+
+**Blocked on you for full sandbox:** a machine with Docker/bench + named owners + sample BOQ/billing data.
+
+## Planning docs
 
 | Doc | Purpose |
 |---|---|
 | [PRD v4.1](./Construction_AI_ERP_Focused_Scope_PRD_v4.1.docx) | Requirements & acceptance |
-| [Whole software WBS](./WHOLE_SOFTWARE_BUILD_PLAN.md) | 18 steps · 96 tasks · 5 phases each |
-| [Release plan](./RELEASE_PLAN.md) | R0→R4 mapping of those tasks |
-| [Development plan](./DEVELOPMENT_PLAN.md) | Narrative program notes |
-| [Evidence register](./docs/evidence-register.md) | VAL / SP / UAT proof log |
+| [Whole software WBS](./WHOLE_SOFTWARE_BUILD_PLAN.md) | 18 steps · 96 tasks · 5 phases |
+| [Release plan](./RELEASE_PLAN.md) | R0→R4 task mapping |
+| [First work](./docs/first-work.md) | **Start here for execution** |
+| [Stack versions](./docs/stack-versions.md) | ERPNext/Frappe pin candidates |
+| [Evidence register](./docs/evidence-register.md) | VAL / SP / UAT log |
+| [R0 checklist](./docs/r0-kickoff-checklist.md) | Owners & exit gate |
+| [SP-01 design](./docs/spikes/SP-01-cost-billing.md) | First experiment |
 
-## Current execution phase
+## Repo layout
 
-**R0 — Discovery & feasibility**
-
-1. Appoint owners (sponsor, finance/QS, tech, mobile, QA)  
-2. Fill evidence register  
-3. Complete foundation tasks **1.1–1.5**  
-4. Run experiments **SP-01…SP-06**  
-5. Go/no-go to fund R1  
+```text
+apps/construction/   # Frappe construction domain app (skeleton)
+docs/                # Plans, spikes, evidence
+.github/workflows/   # CI
+```
 
 ## Access planes
 
-- **Platform Admin** — vendor SaaS console / standalone installer admin  
-- **Company Admin** — customer org, country profile, users, policies  
-- **Employee / Operations** — role-scoped project work (web + mobile)  
+- **Platform Admin** — vendor SaaS / standalone installer  
+- **Company Admin** — org, country profile, users, policies  
+- **Employee / Operations** — project work on web + mobile  
