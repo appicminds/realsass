@@ -17,6 +17,8 @@
 
 ---
 
+**Amendment status.** PA-01…PA-11 remain pending. Work built on v4.0 (for example the B1 field-report journey) proceeds without approving them.
+
 ## 1. Source inventory
 
 | Source | State found | Notes |
@@ -190,7 +192,7 @@ Each entry gives: source document and section, the PRD requirement or reference,
 ### D-08 — "International-ready" is presented as "validated countries at launch"
 
 - **Source:**
-  - Existing Figma "Country Settings" (`10651:2351`): "United Arab Emirates profile", "VAT 5% Standard rated", "Tax and e-invoicing: Configured, Done (4)". "Company Admin Home" repeats "UAE · AED". Fixtures read as a configured, validated pack.
+  - Existing Figma "Country Settings" (`10651:2350`): "United Arab Emirates profile", "VAT 5% Standard rated", "Tax and e-invoicing: Configured, Done (4)". "Company Admin Home" repeats "UAE · AED". Fixtures read as a configured, validated pack.
   - `DEVELOPMENT_PLAN.md` §11: "Country pack | After jurisdiction content exists" as a priced offer line.
   - `DEVELOPMENT_PLAN.md` §1.2: "International core + country/jurisdiction packs".
   - `RELEASE_PLAN.md` R1 5.4 "Country model".
@@ -434,13 +436,13 @@ Also proposed: assign **8.7 to R1**, and move 8.6a, 8.6b and 8.8 to R1.
 |---|---|---|---|---|---|
 | **Vendor platform operations** (provider operations staff) | Vendor control plane, **SaaS only** | Tenant health, provisioning status, entitlement and metering metadata | Provision, suspend, run recovery, request time-bound support access | See project ledger, payroll or project records by default. Approve customer payments. Rewrite project financials. | `TEN-03`, `COM-05` |
 | **Vendor billing staff** (provider billing) | Vendor control plane, SaaS only | Commercial metadata only | Manage subscription, invoices, payment verification | Read project data | `COM-05`, `BIZ-01` |
-| **Customer organization administrator** | Company admin | The customer's own organization | Invitations, roles, project entitlements, module settings, approved integration settings, audit visibility | Bypass project-finance segregation. Approve payments. Hold implicit finance rights. | `COM-05`, `APR-04`, §5 ERP administrator |
+| **Customer organization administrator** | Company admin | The customer's own organization | Invitations, roles, project entitlements, module settings, approved integration settings, audit visibility | Gain approval rights from administrative access alone. Bypass project-finance segregation. | `COM-05`, `APR-04`, §5 ERP administrator |
 | **Customer billing administrator** | Subscription and invoices (SaaS) | Subscription and invoice contacts | Update contacts, review plan, capacity and invoices | Payroll access. Project data. | `COM-05`, `BIZ-01/02` |
 | **Standalone installation administrator** *(proposed term)* | Installation console, **standalone only**. Run by the **customer** | The customer's installation: infrastructure, keys, backups, licence, upgrades | Install, activate licence, back up and restore, upgrade, connect mobile | Be the vendor. Approve finance. | `DEP-01…06`, `LIC-03/04/05`, `PORT` |
 | **Operational business roles** | Employee/Operations | Assigned projects | Owner, operations manager, PM, QS, procurement and site supervisor per §5 | Gain rights from an admin menu | §5 |
 | **Finance business roles** | Employee/Operations plus ERPNext Desk | Finance scope | Finance manager and accountant per §5 | Self-approve vendor setup and payment | §5, `APR-04` |
 
-**Rule:** no financial approval is available through administrator access. Approving, certifying and releasing are business-role actions bound to a revision and a policy version.
+**Rule:** administrative access confers no implicit business approval rights. Approving, certifying and releasing are business-role actions bound to a revision and a policy version. A user who separately holds an authorized business role may act in it, and permission checks and segregation of duties still apply.
 
 ### 6.2 The billing chain, in design vocabulary
 
@@ -476,7 +478,7 @@ File `nW0n4I3aarR2CqvEt9d9ZY`, page "CIP SaaS Screens" `10656:11704`. 13 frames:
 | E-05 | Company Admin Home `10623:841` | An **approval queue** (7 pending) and "Offline sync health" appear on the admin plane. | Admin home shows administration items only. Approvals stay in the business-role inbox. | B13 |
 | E-06 | Approvals `10651:1908` | Grouped bars by request type. No evidence, changed fields, policy version or budget impact. "Daily reports" listed as an approval type although they are accepted or returned. | Master-detail review (`UX-08`). Daily reports go to a review queue, not the approval queue. | B4 |
 | E-07 | Users and Roles `10651:2129` | Seat arithmetic: "48 of 52 seats used" while the role bars are 22 + 12 + 8 + 6 = 48 with active 20 + 12 + 7 + 6 = 45 and invited 3. Roles shown omit owner, operations manager, procurement, accountant and ERP administrator. | Define whether invited users take seats (D-15). Show all §5 roles. | B13 |
-| E-08 | Country Settings `10651:2351` | UAE, AED, "VAT 5% Standard rated", "Tax and e-invoicing: Configured" and "Asia/Dubai" read as a validated pack. | Relabel "sample profile". Show unconfigured and unreviewed states (D-08). | B13 |
+| E-08 | Country Settings `10651:2350` (frame; `10651:2351` is its Sidebar child) | UAE, AED, "VAT 5% Standard rated", "Tax and e-invoicing: Configured" and "Asia/Dubai" read as a validated pack. | Relabel "sample profile". Show unconfigured and unreviewed states (D-08). | B13 |
 | E-09 | Daily Report `10645:1265` | Header reads "Submitted by Jonas Weber · **Draft**". The page is a read-only progress summary. There is no entry form and no return or amend flow. "Done / Remaining / Behind plan" mix three meanings. | Separate entry, review and amendment screens (`OPS-01`, `PROJECT-03`). One state at a time. | B1 |
 | E-10 | Platform Admin Tenants `10651:2571` | "Seats licensed 9,840, 92% utilised". Capacity model differs from `COM-03` (D-15). Only a list exists. Provisioning, support grants and entitlements are not designed. | Capacity measures per `COM-03`. Add the real workflows. | B15 |
 | E-11 | Mobile Today `10646:1231` | Tab bar reads "Approvals". PRD `MOB-04` says **Inbox**. | Rename to Inbox (D-14). | B14 |

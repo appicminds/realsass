@@ -12,13 +12,14 @@
 
 1. **One batch is one coherent user journey**, designed, reviewed and prototype-checked before the next starts.
 2. **The order follows the PRD, not the menu.** PRD §17.1 says "the first implementation increment must connect one field report through measurement to an eligible invoice and reconciled cost view." Design starts on that spine. `SP-05` (R0) tests it with a clickable flow: save offline, identify an accepted report, resolve a conflict, reject a stale drawing, prepare a correct incremental bill.
-3. **Design the full product, and show release and entitlement on every frame.** Each frame carries a release chip (R1, R2, R3, R4) and, where relevant, an entitlement chip (Core, Operations Plus, Enterprise, AI add-on). Later screens whose rules are unresolved carry a **"Provisional, rules unresolved"** badge. A provisional screen is never presented as approved.
+3. **Design the full product and annotate release and entitlement outside the product.** Requirement IDs, release tags, entitlement assumptions and review status go in Figma **section annotations outside the product viewport**. Customer-facing screens show no internal planning labels (no `WF-`, PRD IDs or release chips). Later screens whose rules are unresolved are annotated **"Provisional, rules unresolved"** in the section, never inside the screen. A provisional screen is never presented as approved.
 4. **Task-shaped layouts.** Use an editor for entry, a master-detail pane for review, a register for lists and a form for settings. Do not repeat cards, then bars, then a table. Use bars only where a quantity against a total is the point, and make the arithmetic match the label.
 5. **Existing foundation stays.** Inter. The neutral and teal foundation. Untitled UI free-kit components. Semantic colours: success is never red.
 6. **No new rules.** No tax defaults, approval thresholds or accounting policy appear in design. Fields are empty or marked sample until finance approves them.
 7. **Every screen specifies its states** (`UX-09`): loading, empty, filtered-empty, validation, denied, stale/conflict, offline, partial upload, expired session and success, where applicable.
 8. **Every control goes somewhere.** In a prototype each button leads to a screen or is shown disabled with a reason. Every failure state has a recovery path.
 9. **Native ERP screens are not rebuilt by default.** See the Desk, configured and custom split in the coverage file §2.
+10. **Pending amendments stay pending.** `PA-01…PA-11` are not applied and need not be approved before a batch built on PRD v4.0 proceeds. Only batches that depend on a specific amendment wait for it (see §5). B1 is built on v4.0 alone.
 
 ---
 
@@ -44,12 +45,12 @@ Every role also has **Home** (ROL-01), **Approvals** where the role can approve 
 |---|---|
 | **Owner** | Dashboard (OWN-01) · Projects (PRJ-04) · Approvals, high-value only (APR-01) · Alerts (OWN-03) · Reports, read (FIN-04) |
 | **Finance manager and accountant** | Invoices (INV-02) · Receipts and collections (COL-01, COL-02) · Retention (RET-01) · Advances (COL-03) · Payments (PRC-06, PRC-08) · Petty cash (FIN-02) · Month close (FIN-03) · Reports (FIN-04) · Ledger in Desk (FIN-01) · Migration reconciliation (FIN-05) |
-| **Quantity surveyor** | Measurements (MSR-01, MSR-02) · Certificates (CRT-01, CRT-02) · Invoice eligibility (INV-01) · Changes and claims (CHG-01…06) · Subcontract certification (SUB-02) · BOQ and contract (BOQ-01…03) · Submittals (DOC-03) |
-| **Project manager** | Project hub (PRJ-03) · Daily report review (SIT-02) · Lookahead (SIT-06) · Requisitions (PRC-01) · RFIs (DOC-02) · Drawings (DOC-01) · Changes (CHG-01) · Safety actions (SAF-02) · Closeout (CLO-01…03) |
+| **Quantity surveyor** | Measurements (MSR-01, MSR-02) · Certificates (CRT-01, CRT-02) · Invoice eligibility (INV-01) · Changes and claims (CHG-01…06) · Subcontract certification (SUB-02) · BOQ and contract (BOQ-01…03) · Submittals, submitter per contract (DOC-03; reviewer authority unresolved) |
+| **Project manager** | Project hub (PRJ-03) · Daily report review (SIT-02) · Lookahead (SIT-06) · Requisitions (PRC-01) · RFIs (DOC-02) · Drawings, read (DOC-01) · Changes (CHG-01) · Closeout (CLO-01…03) |
 | **Procurement** | Requisitions (PRC-01) · Quotes (PRC-02) · Purchase orders (PRC-03) · Suppliers (PRC-04) · Receiving (PRC-05) · Stock (PRC-07) |
 | **Operations manager** | Portfolio (PRJ-04) · Site issues (SIT-05) · Equipment (EQP-01) · Alerts (OWN-03) |
 | **Site supervisor** | **Mobile first.** Today · Projects · Capture · Inbox · More (MOB-04). Web: light report entry (SIT-01), attendance (SIT-03). Safety capture (SAF-01) |
-| **Unresolved roles** | Safety owner, document controller, QA inspector, storekeeper and sales role are not named in the PRD. Their items sit under the project manager or QS until `DEC-06` and decision 17 settle roles. |
+| **Unresolved roles** | Safety owner, document controller, QA inspector, storekeeper and sales role are not named in the PRD. **Technical and safety authority is not assigned to the project manager or QS by default.** Items needing these authorities show as "authority unresolved" in design annotations until `DEC-06` and decision 17 settle them. |
 
 ### 2.3 Mobile navigation (employee shell only)
 
@@ -65,9 +66,9 @@ Release tags are the earliest PRD release for the batch's core workflows. Each b
 
 - [ ] Every screen lists the `UX-09` states that apply, or records why one does not.
 - [ ] Vocabulary matches `CIP_PLAN_RECONCILIATION.md` §6 (billing chain, availability levels, roles).
-- [ ] No financial approval, certification, posting or safety release is possible offline or through an admin role.
+- [ ] No financial approval, certification, posting or safety release is possible offline. Administrative access alone confers no business approval rights. Permission checks and segregation of duties apply to any user who also holds a business role.
 - [ ] No tax rate, threshold or accounting policy is pre-filled.
-- [ ] Release and entitlement chips are present. Provisional rules are badged.
+- [ ] Release, entitlement and requirement annotations sit in the section outside the viewport. No internal planning label appears on a screen. Provisional rules are annotated.
 - [ ] Any progress bar's numerator and denominator match its label. Success is never red.
 - [ ] Layout fits the task (editor, review pane, register or form), not the repeated card-bar-table pattern.
 - [ ] Untitled UI free-kit components, Inter and the teal foundation are used.
@@ -81,9 +82,9 @@ Release tags are the earliest PRD release for the batch's core workflows. Each b
 ### B0 — Shared specification (no journey, no screens)
 
 - **Workflows:** WF-CMN-02.
-- **Content:** the ten-state kit, status chips for each state vocabulary, number and currency formats, release and entitlement chips, the "claimed, not certified" label pattern, and the "sample, not validated" pattern.
-- **Needs approval of:** the vocabulary in reconciliation §6.
-- **Review:** UX lead and finance/QS lead.
+- **Scope (narrowed):** only the reusable patterns B1 needs: inputs, repeatable activity rows, evidence tiles, status indicators for the two state dimensions, validation, confirmation dialogs, review actions and recovery messages. It reuses the existing kit and is **not** a second design system. Other patterns (claimed/certified columns, sample-profile labelling) wait for the batch that needs them.
+- **Annotations:** pattern notes, requirement IDs and review status sit in the section outside the viewport.
+- **Review:** UX lead.
 
 ---
 
@@ -93,6 +94,7 @@ Release tags are the earliest PRD release for the batch's core workflows. Each b
 - **Workflows:** WF-SIT-01, WF-SIT-02, WF-SIT-04, WF-MOB-05, WF-MOB-07, WF-MOB-08, WF-MOB-10.
 - **Requirements covered:** `OPS-01`, `PROJECT-03`, `UX-03`, `UX-09`, `MOB-S04`, `MOB-S05`, `MOB-S09`, `SYNC-05/06/07/08`, `MOB-03` (supervisor), §10.2 offline authority.
 - **Dependencies:** B0. Needs fixture projects, sites and BOQ lines (their setup is B8). Needs a lease in state `valid` (the lease screens are B15).
+- **Basis:** PRD v4.0 only. Amendments `PA-01…PA-11` stay pending and are not applied. Unrelated country, pricing, licensing and future-module decisions do not block B1.
 - **Existing frames corrected here:** Daily Report `10645:1265` (E-09). Mobile Capture `10646:1322` (E-12). Both are corrected by new frames. The originals are preserved.
 
 **Exact screens and alternate states**
@@ -101,11 +103,11 @@ Release tags are the earliest PRD release for the batch's core workflows. Each b
 |---|---|---|---|
 | 1 | Daily report editor | D, T | New (empty). Draft with save status. Validation (missing unit or quantity). **Duplicate** (a report exists for the same site, date, shift and unit). Stale reference (BOQ line superseded). Save failed. Expired session with form state kept. |
 | 2 | Submit dialog | D, T | Summary of what will be sent. Submitting. Submitted for review. Denied (no permission). |
-| 3 | Report detail | D, T | One state chip: Draft, Submitted, Under review, Returned, Accepted, Amended (revision n). Revision-history drawer. |
-| 4 | Review queue | D | Default. Empty. Filtered-empty. Loading. |
+| 3 | Report detail | D, T | **Two separate dimensions.** Business review: Draft, Submitted for review, Returned, Accepted ("Under review" only if the PRD defines it; v4.0 does not, so it is omitted). Transport: Saved on device, Queued, Uploading, Awaiting server validation, Synced, Failed, Conflict, Access revoked, Action required. Revision is shown beside the review status ("Returned · Revision 2"). "Amended" is history, not a status. Revision-history drawer keeps earlier submitted versions. |
+| 4 | Review queue | D, T | Default. Empty. Filtered-empty. Loading. |
 | 5 | Report review pane | D, T | Quantities against plan. Evidence gallery with an original-retained indicator. Changes since the prior revision. Accept and Return dialogs. Denied. **Stale revision conflict** with refresh. |
 | 6 | Amend returned report | D, T | Return-reason banner. Editing. Resubmit. New revision created. |
-| 7 | Capture hub | P | Items for the role. Empty. |
+| 7 | Today and Capture hub | P | Items for the role. Empty. |
 | 8 | Daily report form | P | Section status (activities, quantities, manpower, blockers, evidence). Draft. Validation. |
 | 9 | Record progress | P | **Saved on this device**, then **Uploading (n of m)**, then **Accepted by server** or **Awaiting validation**. Offline banner reads "Not yet sent". Never "saved" before the local save. |
 | 10 | Evidence capture | P | Camera. **Permission denied** with manual alternative. Annotate as a copy, original kept. Partial upload and resume. |
@@ -126,6 +128,7 @@ Release tags are the earliest PRD release for the batch's core workflows. Each b
 1. All thirteen screens exist with the listed states. Nothing is "saved" before it is saved.
 2. The three mobile save states are separate and visible on both web and mobile.
 3. State vocabulary matches `OPS-01` and `MOB-S04`. No contradictory label such as "Submitted" beside "Draft".
+3a. Transport state and business review state are always separate. A synced draft stays a draft. A server-accepted submission can still await PM review. Required evidence completes validation before the server accepts a submission. A partial upload keeps the draft and offers recovery.
 4. The report identity fields (project, site, date, shift, reporting unit) are present. The duplicate state is designed.
 5. No approval, certification or posting action appears offline. Review accept and return are not financial approvals.
 6. Any bar's maths matches its labels. Success is not red.
@@ -182,7 +185,7 @@ Release tags are the earliest PRD release for the batch's core workflows. Each b
 | 7 | Delegation dialog and list | Scope, period, value limit. Split-request flag review. |
 
 - **Prototype:** sign in → role home → inbox → open the B2 certificate → decide → certified. Exit: a certified certificate ready for B4. A rejected branch returns to B2.
-- **Acceptance:** a decision binds a revision and policy version. A stale action cannot succeed. No admin role can approve. Daily reports sit in the review queue (B1), not here. Nothing is approvable offline.
+- **Acceptance:** a decision binds a revision and policy version. A stale action cannot succeed. Administrative access alone cannot approve. Permission checks and segregation of duties apply to a user who also holds a business role. Daily reports sit in the review queue (B1), not here. Nothing is approvable offline.
 
 ---
 
@@ -267,6 +270,8 @@ Release tags are the earliest PRD release for the batch's core workflows. Each b
 
 ### B11 — Technical, quality, safety, closeout, outputs
 
+> **Group batch.** B11 bundles several journeys. It must be split into smaller execution batches (for example drawings and submittals, inspection and quality, safety, closeout, outputs) before it is scheduled. Technical and safety authority is unresolved (`DEC-06`) and is not assigned to PM or QS by default.
+
 - **Release:** R1 (some R2). **Workflows:** WF-SIT-06, WF-DOC-03, WF-DOC-04, WF-QUA-01, WF-QUA-02, WF-QUA-03, WF-SAF-01, WF-SAF-02, WF-SAF-03, WF-EQP-01, WF-CLO-01, WF-CLO-02, WF-CLO-03, WF-OUT-01.
 - **Requirements:** `LOOK-01/02`, `SUB-01/02/03`, `DOC-03`, `QUAL-01/02/03`, `SAFE-01/02`, `EQP-01`, `HAND-01/02`, `PROJECT-05`, `OUT-01/02`, `V3-01`, `V3-02`, `V3-05`.
 - **Dependencies:** B1, B5. Roles for safety, documents and QA are unresolved (decision 17).
@@ -297,9 +302,9 @@ Release tags are the earliest PRD release for the batch's core workflows. Each b
 - **Release:** R1 and R2. **Workflows:** WF-CAD-00 … WF-CAD-08, WF-CMN-03.
 - **Requirements:** `COM-05`, `APR-01/03`, `SEC-01/02/03`, `INT-01/02`, `PAR-02`, `V3-19`, `PA-02` (proposed).
 - **Dependencies:** B3 (policy affects approvals). Decisions 1, 3, 4, 8, 11.
-- **Existing frames corrected:** Company Admin Home `10623:841` (E-05). Users and Roles `10651:2129` (E-07). Country Settings `10651:2351` (E-08).
+- **Existing frames corrected:** Company Admin Home `10623:841` (E-05). Users and Roles `10651:2129` (E-07). Country Settings `10651:2350` (E-08).
 - **Screens:** admin home, company and country profile with availability badge, users and roles, approval policy editor, modules, integrations, audit, security and devices, export, help.
-- **Acceptance:** admin home shows no approvals. No unreviewed tax rate is shown as fact. An SoD conflict cannot be saved.
+- **Acceptance:** admin home shows no approval queue. Approvals live in the employee shell. No unreviewed tax rate is shown as fact. An SoD conflict cannot be saved.
 
 ### B15 — Mobile production completeness
 
@@ -327,8 +332,10 @@ Release tags are the earliest PRD release for the batch's core workflows. Each b
 
 ### B18 — Later releases (provisional)
 
+> **Group batch.** B18 bundles unrelated later-release modules. It must be split into smaller execution batches, one per module with its own approved rules, before it is scheduled.
+
 - **Release:** R3 and R4. **Workflows:** WF-EST-01, WF-CRM-01, WF-BIL-R3, WF-LAB-04, WF-AI-01 … WF-AI-06, WF-PLN-01, WF-ECO-01, WF-ECO-02, WF-ECO-03, WF-GTM-01.
-- **Rule:** every frame carries "Provisional, rules unresolved" and a release chip. AI screens show the manual fallback. Marketing is a separate, non-PRD track.
+- **Rule:** the section annotation, not the screen, carries "Provisional, rules unresolved" and the release tag. AI screens show the manual fallback. Marketing is a separate, non-PRD track.
 - **Dependencies:** their evaluation gates (`EVAL-01…06`) and paying-customer evidence.
 
 ### B19 — Cross-journey prototype integration
@@ -355,14 +362,14 @@ Every workflow ID in the coverage file is assigned to exactly one batch.
 | B8 | Project, contract, BOQ setup | 5 |
 | B9 | Procurement to payment | 8 |
 | B10 | Labour and subcontract | 7 |
-| B11 | Technical, quality, safety, closeout, outputs | 14 |
+| B11 | Technical, quality, safety, closeout, outputs (**group, split before scheduling**) | 14 |
 | B12 | Executive and portfolio | 6 |
 | B13 | Finance operations | 5 |
 | B14 | Company administration | 10 |
 | B15 | Mobile production completeness | 11 |
 | B16 | Vendor control plane and SaaS lifecycle | 10 |
 | B17 | Standalone, licensing, portability | 8 |
-| B18 | Later releases (provisional) | 15 |
+| B18 | Later releases (provisional) (**group, split before scheduling**) | 15 |
 | B19 | Cross-journey prototype integration | 0 (links existing work) |
 | **Total** | | **132** |
 
@@ -374,7 +381,7 @@ The total matches the 132 workflows in `CIP_DESIGN_COVERAGE.md`. A mechanical ch
 
 | Decision | Gates |
 |---|---|
-| 1. Approve or reject PA-01…PA-11 | All, vocabulary and scope |
+| 1. Approve or reject PA-01…PA-11 | **Not B1 or other v4.0 batches.** Only batches that depend on a specific amendment: B14 (country profile, PA-02), B15 (RTL scope, PA-06/07), B14/B16/B17 (shell split, PA-03/04) |
 | 2. Urdu RTL for R2 | B15 |
 | 3. One admin console or separate vendor and installation consoles | B14, B16, B17 |
 | 4. First validated country | B14 |
