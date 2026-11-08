@@ -39,6 +39,7 @@ Per PRD §12.1: neutrals, deep-teal actions, semantic states, tabular figures, 4
 ## Figma
 - Current file: https://www.figma.com/design/nW0n4I3aarR2CqvEt9d9ZY/CIP-SASS (Untitled UI free kit copy, `Brand/*` styles re-themed to CIP teal `#0F766E` / `#0D9488`)
 - Page **CIP Screens** (Design Gate, draft for sponsor review): Company Admin Home, Project Hub, Commercial Workbench, Daily Report (web, 1440), Mobile Today + Capture (390)
+- Extended pages on CIP Screens: Overview (employee landing), Projects, Procurement, Approvals, Users and roles, Country and jurisdiction settings, Platform Admin Tenants (same shell, draft)
 - Components: kit Table, Button, Badge, Pagination; sidebar, metric cards and status bars are hand-built in kit style because they are PRO-only. Moving to Untitled UI PRO would replace those with official components.
 - Superseded: https://www.figma.com/design/yoTMDkmw6OQZr6d8xhqPeB (wireframe pass, rejected 07 Nov 2026)
 
