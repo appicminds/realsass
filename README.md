@@ -20,9 +20,12 @@ Right now in this repo:
 
 | Doc | Purpose |
 |---|---|
-| [PRD v4.1](./Construction_AI_ERP_Focused_Scope_PRD_v4.1.docx) | Requirements & acceptance |
-| [Whole software WBS](./WHOLE_SOFTWARE_BUILD_PLAN.md) | 18 steps · 96 tasks · 5 phases |
-| [Release plan](./RELEASE_PLAN.md) | R0→R4 task mapping |
+| [PRD v4.1](./Construction_AI_ERP_Focused_Scope_PRD_v4.1.docx) | **Proposed amendments only, no approval record.** PRD v4.0 governs (`git show f47c80f:Construction_AI_ERP_Focused_Scope_PRD_v4.docx`) |
+| [Whole software WBS](./WHOLE_SOFTWARE_BUILD_PLAN.md) | 18 steps · 103 tasks · 5 phases (corrected, see reconciliation) |
+| [Release plan](./RELEASE_PLAN.md) | R0→R4 task mapping (draft, not reconciled) |
+| [Plan reconciliation](./CIP_PLAN_RECONCILIATION.md) | Discrepancies, PRD version control, corrected counts, Figma defects |
+| [Design coverage](./CIP_DESIGN_COVERAGE.md) | Workflow inventory with status |
+| [Design sequence](./CIP_DESIGN_SEQUENCE.md) | Role navigation and ordered design batches |
 | [First work](./docs/first-work.md) | **Start here for execution** |
 | [Design approach](./docs/DESIGN_APPROACH.md) | **DEC-11 accepted** — Jobber/Procore refs, Vue+Element Plus, Flutter M3, Design Gate |
 | [DEC-11](./docs/decisions/DEC-11-design-system.md) | Design decision record |

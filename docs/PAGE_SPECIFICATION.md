@@ -1,5 +1,7 @@
 # Page specification (content and layout), derived from PRD v4.1 and design research
 
+> **Superseded for planning:** use `CIP_DESIGN_COVERAGE.md` and `CIP_DESIGN_SEQUENCE.md`. This page spec cites `ACC-01` (v4.1 only, unapproved), and its W-/C-/P- page IDs are not PRD workflow IDs. See `CIP_PLAN_RECONCILIATION.md` D-18.
+
 **Status:** DRAFT for sponsor approval. **No further Figma drawing until this is approved.**
 **Sources:** `Construction_AI_ERP_Focused_Scope_PRD_v4.1.docx` (sections 3.0, 5, 6–10, 12), plus the research notes below.
 **Rule:** every page below exists because a PRD requirement ID needs it. Content is taken from the PRD, not invented.

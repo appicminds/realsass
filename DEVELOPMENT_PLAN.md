@@ -1,5 +1,7 @@
 # Construction Intelligence Platform — Full Development Plan
 
+> **Reconciliation notice (see `CIP_PLAN_RECONCILIATION.md`):** PRD v4.0 governs; v4.1 changes are proposed amendments PA-01…PA-11 and are not approved. Open items in this plan: R2 English/Urdu field navigation, RTL and field guides are required by v4.0 (D-06); admin roles are conflated (D-07); `DEC-10` is plan-local (D-11); R1 build order differs from RELEASE_PLAN (D-13). The body of this file is otherwise unchanged.
+
 **Status:** Working plan aligned to PRD v4.1  
 **Product:** International construction ERP (SaaS + standalone) with web, iOS, and Android  
 **Foundation:** ERPNext / Frappe + version-controlled construction app + optional isolated AI  

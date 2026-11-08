@@ -1,5 +1,7 @@
 # Whole Software Build Plan (WBS)
 
+> **Reconciliation notice (see `CIP_PLAN_RECONCILIATION.md`):** the step tables list **103 tasks**, not 96. Correct totals are 515 task-phases + 30 campaign-phases = **545 planning units**. The authority line below should read PRD **v4.0** (governing) with v4.1 as proposed amendments PA-01…PA-11. Release mapping status is *draft, not reconciled* (D-03). The body of this file is otherwise unchanged.
+
 **Purpose:** Inventory and structure the **entire software** to build, independent of release cuts.  
 **Next step (later):** Map this WBS onto releases (R0/R1/R2…).  
 **Authority:** PRD v4.1 + this WBS.  

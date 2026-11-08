@@ -1,5 +1,7 @@
 # Release Plan — Mapping Whole Software → Releases
 
+> **Reconciliation notice (see `CIP_PLAN_RECONCILIATION.md`):** status is *draft release map, not reconciled*. Counts in §1 and §10 do not match the lists (R1 lists 69 tasks, not 48), task 8.7 is unmapped, collections (8.6) are deferred against PRD BILL-05/06/07 (R1 P0), and R2 gate language blurs R2S, R2L and the dual-mode claim (D-02, D-03, D-04, D-12). PRD v4.0 governs; v4.1 is proposed. The body of this file is otherwise unchanged.
+
 **Status:** Active release map (derived from `WHOLE_SOFTWARE_BUILD_PLAN.md`)  
 **Date:** 07 November 2026 (Asia/Karachi)  
 **Rule:** Releases **select** WBS tasks; they do not invent new product scope.
