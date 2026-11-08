@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "cursor/**"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  foundation-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python syntax check (construction app)
+        run: |
+          python3 -m compileall -q apps/construction/construction
+
+      - name: Required planning docs present
+        run: |
+          test -f README.md
+          test -f WHOLE_SOFTWARE_BUILD_PLAN.md
+          test -f RELEASE_PLAN.md
+          test -f docs/first-work.md
+          test -f docs/stack-versions.md
+          test -f docs/evidence-register.md
+          test -f apps/construction/construction/hooks.py
+
+      - name: No secrets in tree (basic)
+        run: |
+          if grep -RInE '(API_KEY|SECRET_KEY|BEGIN RSA PRIVATE KEY|password\s*=\s*["\x27][^"\x27]+)' \
+            --exclude-dir=.git --exclude-dir=.github --exclude='*.docx' . ; then
+            echo "Possible secret material found" >&2
+            exit 1
+          fi
+          echo "Basic secret scan OK"
