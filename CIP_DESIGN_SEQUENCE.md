@@ -115,6 +115,19 @@ Release tags are the earliest PRD release for the batch's core workflows. Each b
 | 12 | Quantity conflict resolution | P | Local against current values. Base version. Choose, merge, discard. Explanation. |
 | 13 | Locked states | P | Lease expired. Access revoked. |
 
+**Figma status (design work only, not approved)**
+
+Page "CIP SaaS Screens" (`10656:11704`), file `nW0n4I3aarR2CqvEt9d9ZY`. All 13 earlier frames are preserved. New sections, placed below them:
+
+| Section | Node | Contents |
+|---|---|---|
+| B0 — Shared patterns used by B1 | `10667:3044` | Inputs, activity row, evidence tiles, two-dimension status indicators, validation, confirmation dialogs, review actions, recovery messages, mobile touch targets. Reuses kit Button, Badge, Input field. |
+| B1 — Mobile capture and synchronization | `10669:3213` | M1 to M17: Today, Capture hub, report details and overview, record progress (entering, saving, saved on device), camera, photo review, offline submit sheet, sync centre, quantity conflict, returned report, amendment, accepted, lease expired, access revoked. |
+| B1 — Web review and amendment | `10672:3322` | W1 editor, W2 submit dialog, W3 detail with revision history, W4 review queue and pane, W5 return dialog, W6 accept dialog, W7 tablet review (1024 x 768), W8 amend returned report, W9 accepted. |
+| B1 — Alternate states and prototype instructions | `10675:6946` | S1 to S14 web states (duplicate with and without permission, validation, stale reference, save failed, session expired, submission in progress, evidence failed, submit not permitted, stale review, segregation of duties, empty, filtered-empty, loading), P1 to P7 mobile states (duplicate, validation, camera denied, partial upload, stop upload, low storage, seven-day prompt), annotation and prototype instruction panels. |
+
+Requirement IDs, release tags, entitlement assumptions, review status and the demo-data label sit in annotation panels outside the product frames. Prototype links wire the main path and two flow starts. Known limits: the placeholders for photos are neutral tiles, not real imagery. "Under review" is omitted because PRD v4.0 does not define it for daily reports. Tablet review is shown for the reviewer only. RTL, dark mode and accessibility annotations beyond contrast, focus and target size are not done. None of this is approved.
+
 **Prototype entry and exit**
 
 - **Entry:** mobile Today → Capture → Daily report.
