@@ -71,6 +71,12 @@ LISTS = {
     "Lead status": ["New", "Contacted", "Quoted", "Won", "Lost"],
     "Lead source": ["Referral", "Website", "Phone", "Walk-in", "Tender", "Social media"],
     "Payment mode": ["Bank transfer", "Cheque", "Cash"],
+    "Trade": ["Mason", "Labourer / helper", "Carpenter", "Steel fixer", "Electrician", "Plumber", "Painter",
+              "Tile fixer", "Welder", "Machine operator", "Driver", "Foreman", "Supervisor", "Engineer",
+              "Storekeeper", "Watchman"],
+    "Worker category": ["Daily wage", "Monthly staff", "Contractor labour"],
+    "Attendance status": ["Present", "Half day", "Absent", "Leave"],
+    "Advance type": ["Advance given", "Recovered from wages"],
 }
 LIST_COL = {name: get_column_letter(i + 1) for i, name in enumerate(LISTS)}
 
@@ -185,19 +191,46 @@ SPECS["Cost Codes"] = dict(
 
 SPECS["Workers"] = dict(
     tab_color=NAVY,
-    purpose="LABOUR-01 minimal worker reference. Keep CNIC and bank details in the payroll system.",
+    purpose="LABOUR-01: masons, labourers and other workers. Keep CNIC and bank details in the payroll system.",
     cols=[
-        col("id", "Worker ID", 12),
+        col("id", "Worker ID", 11),
         col("name", "Name", 22),
-        col("trade", "Trade / skill", 16),
-        col("rate", "Daily rate (PKR)", 14, fmt=MONEY),
-        col("rate_from", "Rate effective from", 14, fmt=DATE),
-        col("contractor", "Labour contractor (party ID)", 18, dv=PARTIES),
+        col("trade", "Trade", 16, dv=lst("Trade")),
+        col("category", "Category", 15, dv=lst("Worker category")),
+        col("rate", "Daily rate (PKR)", 13, fmt=MONEY),
+        col("rate_from", "Rate effective from", 13, fmt=DATE),
+        col("project", "Usual project", 12, dv=PROJECTS),
+        col("contractor", "Labour contractor (party ID)", 16, dv=PARTIES),
         col("phone", "Phone", 15, fmt="@"),
+        col("joined", "Joined on", 12, fmt=DATE),
         col("active", "Active", 9, dv=lst("Yes/No")),
+        col("adv_bal", "Advance balance (PKR)", 14, "auto", fmt=MONEY,
+            f=lambda r, c: f'=IF(${c("id")}{r}="","",SUMIFS({X("Labour Advances","amount")},{X("Labour Advances","worker")},{c("id")}{r},{X("Labour Advances","type")},"Advance given")-SUMIFS({X("Labour Advances","amount")},{X("Labour Advances","worker")},{c("id")}{r},{X("Labour Advances","type")},"Recovered from wages"))'),
+        col("check", "Check", 20, "auto", flag=True,
+            f=lambda r, c: f'=IF(${c("id")}{r}="","",IF(COUNTIF(${c("id")}$2:${c("id")}${ROWS+1},{c("id")}{r})>1,"Duplicate worker ID",IF(N({c("rate")}{r})=0,"Daily rate missing","")))'),
+        col("notes", "Notes", 24),
+    ],
+    example=[["W-001", "Example mason", "Mason", "Daily wage", 2500, D(2026, 11, 1), "PRJ-001", None, None,
+              D(2026, 11, 1), "Yes", None, None, "Example row"],
+             ["W-002", "Example helper", "Labourer / helper", "Daily wage", 1500, D(2026, 11, 1), "PRJ-001", None,
+              None, D(2026, 11, 1), "Yes", None, None, "Example row"]],
+)
+
+SPECS["Labour Advances"] = dict(
+    tab_color="7F6000",
+    purpose="LABOUR-03/05: cash advances to workers and their recovery from wages.",
+    cols=[
+        col("date", "Date", 11, fmt=DATE),
+        col("worker", "Worker ID", 10, dv=WORKERS),
+        col("name", "Worker name", 18, "auto",
+            f=lambda r, c: f'=IF(${c("date")}{r}="","",{lookup("Workers","id","name",c("worker")+str(r))})'),
+        col("type", "Type", 18, dv=lst("Advance type")),
+        col("amount", "Amount (PKR)", 12, fmt=MONEY),
+        col("project", "Project", 11, dv=PROJECTS),
+        col("by", "Paid / approved by", 14),
         col("notes", "Notes", 26),
     ],
-    example=["W-001", "Example mason", "Mason", 2500, D(2026, 11, 1), None, None, "Yes", "Example row"],
+    example=[D(2026, 11, 20), "W-001", None, "Advance given", 5000, "PRJ-001", "A. Khan", "Example row"],
 )
 
 SPECS["Budget"] = dict(
@@ -490,26 +523,33 @@ SPECS["Supplier Invoices"] = dict(
 
 SPECS["Labour Attendance"] = dict(
     tab_color="7F6000",
-    purpose="LABOUR-02: daily attendance and labour cost allocation. Payroll itself stays in the payroll system.",
+    purpose="LABOUR-02: one row per worker per day. Blank hours on a Present row count as a full day.",
     cols=[
         col("date", "Date", 11, fmt=DATE),
         col("project", "Project", 11, dv=PROJECTS),
         col("worker", "Worker ID", 10, dv=WORKERS),
         col("name", "Worker name", 18, "auto",
             f=lambda r, c: f'=IF(${c("date")}{r}="","",{lookup("Workers","id","name",c("worker")+str(r))})'),
+        col("trade", "Trade", 14, "auto",
+            f=lambda r, c: f'=IF(${c("date")}{r}="","",{lookup("Workers","id","trade",c("worker")+str(r))})'),
+        col("status", "Status", 10, dv=lst("Attendance status")),
         col("shift", "Shift", 8, dv=lst("Shift")),
-        col("hours", "Normal hours", 9, fmt=QTY),
+        col("hours", "Hours worked (blank = full day)", 11, fmt=QTY),
         col("ot", "Overtime hours", 9, fmt=QTY),
+        col("work", "Work / location", 20),
         col("code", "Cost code", 11, dv=COSTCODES),
-        col("approver", "Approved by", 13),
+        col("approver", "Marked by", 12),
         col("rate", "Daily rate (PKR)", 12, "auto", fmt=MONEY,
             f=lambda r, c: f'=IF(${c("date")}{r}="","",{lookup("Workers","id","rate",c("worker")+str(r),"0")})'),
+        col("days", "Days counted", 9, "auto", fmt=QTY,
+            f=lambda r, c: f'=IF(${c("date")}{r}="","",IF({c("status")}{r}="Half day",0.5,IF({c("status")}{r}="Present",IF({c("hours")}{r}="",1,{c("hours")}{r}/Settings!$B$3),0)))'),
         col("cost", "Labour cost (PKR)", 13, "auto", fmt=MONEY,
-            f=lambda r, c: f'=IF(${c("date")}{r}="","",{c("rate")}{r}/Settings!$B$3*(N({c("hours")}{r})+N({c("ot")}{r})*Settings!$B$4))'),
+            f=lambda r, c: f'=IF(${c("date")}{r}="","",{c("rate")}{r}*({c("days")}{r}+N({c("ot")}{r})/Settings!$B$3*Settings!$B$4))'),
         col("check", "Check", 22, "auto", flag=True,
-            f=lambda r, c: f'=IF(${c("date")}{r}="","",IF(COUNTIFS(${c("date")}$2:${c("date")}${ROWS+1},{c("date")}{r},${c("worker")}$2:${c("worker")}${ROWS+1},{c("worker")}{r},${c("shift")}$2:${c("shift")}${ROWS+1},{c("shift")}{r})>1,"Same worker twice in shift",""))'),
+            f=lambda r, c: f'=IF(${c("date")}{r}="","",IF({c("status")}{r}="","Status missing",IF(COUNTIFS(${c("date")}$2:${c("date")}${ROWS+1},{c("date")}{r},${c("worker")}$2:${c("worker")}${ROWS+1},{c("worker")}{r},${c("shift")}$2:${c("shift")}${ROWS+1},{c("shift")}{r})>1,"Same worker twice in shift","")))'),
     ],
-    example=[D(2026, 11, 30), "PRJ-001", "W-001", None, "Day", 8, 2, "06-LAB", "A. Khan"],
+    example=[[D(2026, 11, 30), "PRJ-001", "W-001", None, None, "Present", "Day", None, 2, "Block A slab", "06-LAB", "R. Ali"],
+             [D(2026, 11, 30), "PRJ-001", "W-002", None, None, "Half day", "Day", None, None, "Block A slab", "06-LAB", "R. Ali"]],
 )
 
 SPECS["Site Expenses"] = dict(
@@ -719,335 +759,340 @@ SPECS["Leads"] = dict(
 
 ORDER = ["Projects", "Parties", "Cost Codes", "Workers", "Budget", "BOQ", "Measurements", "RA Bills", "Receipts",
          "Change Events", "Requisitions", "Purchase Orders", "Goods Receipts", "Supplier Invoices",
-         "Labour Attendance", "Site Expenses", "Daily Diary", "RFIs", "Submittals", "Documents",
+         "Labour Attendance", "Labour Advances", "Site Expenses", "Daily Diary", "RFIs", "Submittals", "Documents",
          "Quality & Punch", "Safety", "Lookahead", "Leads"]
 
 for name in ORDER:
     LETTERS[name] = {cdef["key"]: get_column_letter(i + 1) for i, cdef in enumerate(SPECS[name]["cols"])}
 
-# ---------------------------------------------------------------------------
-wb = Workbook()
-thin = Side(style="thin", color="BFBFBF")
-HDR_BORDER = Border(bottom=Side(style="medium", color="404040"))
+def build_xlsx():
+    # ---------------------------------------------------------------------------
+    wb = Workbook()
+    thin = Side(style="thin", color="BFBFBF")
+    HDR_BORDER = Border(bottom=Side(style="medium", color="404040"))
 
 
-def style_header(cell, auto=False, fill=NAVY):
-    cell.font = Font(name=FONT, bold=True, color="000000" if auto else "FFFFFF", italic=auto)
-    cell.fill = PatternFill("solid", fgColor=GREY_HDR if auto else fill)
-    cell.alignment = Alignment(wrap_text=True, vertical="center", horizontal="center")
-    cell.border = HDR_BORDER
+    def style_header(cell, auto=False, fill=NAVY):
+        cell.font = Font(name=FONT, bold=True, color="000000" if auto else "FFFFFF", italic=auto)
+        cell.fill = PatternFill("solid", fgColor=GREY_HDR if auto else fill)
+        cell.alignment = Alignment(wrap_text=True, vertical="center", horizontal="center")
+        cell.border = HDR_BORDER
 
 
-def build_register(ws, name):
-    spec = SPECS[name]
-    cols = spec["cols"]
-    L = LETTERS[name]
-    c = lambda k: L[k]
-    ws.sheet_properties.tabColor = spec["tab_color"]
-    for i, cd in enumerate(cols, start=1):
-        auto = cd["kind"] == "auto"
-        h = ws.cell(row=1, column=i, value=cd["header"] + (" (auto)" if auto else ""))
-        style_header(h, auto)
-        ws.column_dimensions[get_column_letter(i)].width = cd["width"]
-    ws.row_dimensions[1].height = 48
-    ws.freeze_panes = "B2" if name not in ("Cost Codes",) else "A2"
+    def build_register(ws, name):
+        spec = SPECS[name]
+        cols = spec["cols"]
+        L = LETTERS[name]
+        c = lambda k: L[k]
+        ws.sheet_properties.tabColor = spec["tab_color"]
+        for i, cd in enumerate(cols, start=1):
+            auto = cd["kind"] == "auto"
+            h = ws.cell(row=1, column=i, value=cd["header"] + (" (auto)" if auto else ""))
+            style_header(h, auto)
+            ws.column_dimensions[get_column_letter(i)].width = cd["width"]
+        ws.row_dimensions[1].height = 48
+        ws.freeze_panes = "B2" if name not in ("Cost Codes",) else "A2"
 
-    examples = spec.get("example") or []
-    if examples and not isinstance(examples[0], list):
-        examples = [examples]
-    n_ex = len(examples)
+        examples = spec.get("example") or []
+        if examples and not isinstance(examples[0], list):
+            examples = [examples]
+        n_ex = len(examples)
 
-    for i, cd in enumerate(cols, start=1):
-        letter = get_column_letter(i)
-        fmt = cd.get("fmt")
-        if cd["kind"] == "auto":
-            for r in range(2, ROWS + 2):
-                cell = ws.cell(row=r, column=i, value=cd["f"](r, c))
-                cell.fill = PatternFill("solid", fgColor=AUTO_BG)
-                cell.font = Font(name=FONT)
-                if fmt:
-                    cell.number_format = fmt
-        else:
-            if fmt:
+        for i, cd in enumerate(cols, start=1):
+            letter = get_column_letter(i)
+            fmt = cd.get("fmt")
+            if cd["kind"] == "auto":
                 for r in range(2, ROWS + 2):
-                    ws.cell(row=r, column=i).number_format = fmt
-        if cd.get("dv"):
-            dv = DataValidation(type="list", formula1=cd["dv"], allow_blank=True, showDropDown=False)
-            dv.error = "Pick a value from the list, or add it to the source list first."
-            dv.errorStyle = "warning"
-            ws.add_data_validation(dv)
-            dv.add(f"{letter}2:{letter}{ROWS + 1}")
-        if cd.get("flag"):
-            ws.conditional_formatting.add(
-                f"{letter}2:{letter}{ROWS + 1}",
-                FormulaRule(formula=[f"LEN({letter}2)>0"], fill=PatternFill("solid", fgColor="F4CCCC"),
-                            font=Font(color="990000", bold=True)))
+                    cell = ws.cell(row=r, column=i, value=cd["f"](r, c))
+                    cell.fill = PatternFill("solid", fgColor=AUTO_BG)
+                    cell.font = Font(name=FONT)
+                    if fmt:
+                        cell.number_format = fmt
+            else:
+                if fmt:
+                    for r in range(2, ROWS + 2):
+                        ws.cell(row=r, column=i).number_format = fmt
+            if cd.get("dv"):
+                dv = DataValidation(type="list", formula1=cd["dv"], allow_blank=True, showDropDown=False)
+                dv.error = "Pick a value from the list, or add it to the source list first."
+                dv.errorStyle = "warning"
+                ws.add_data_validation(dv)
+                dv.add(f"{letter}2:{letter}{ROWS + 1}")
+            if cd.get("flag"):
+                ws.conditional_formatting.add(
+                    f"{letter}2:{letter}{ROWS + 1}",
+                    FormulaRule(formula=[f"LEN({letter}2)>0"], fill=PatternFill("solid", fgColor="F4CCCC"),
+                                font=Font(color="990000", bold=True)))
 
-    for ri, row in enumerate(examples, start=2):
-        for i, v in enumerate(row, start=1):
-            if v is None or cols[i - 1]["kind"] == "auto":
-                continue
-            cell = ws.cell(row=ri, column=i, value=v)
-            if name != "Cost Codes":
-                cell.font = EX_FONT
-    ws.auto_filter.ref = f"A1:{get_column_letter(len(cols))}{ROWS + 1}"
+        for ri, row in enumerate(examples, start=2):
+            for i, v in enumerate(row, start=1):
+                if v is None or cols[i - 1]["kind"] == "auto":
+                    continue
+                cell = ws.cell(row=ri, column=i, value=v)
+                if name != "Cost Codes":
+                    cell.font = EX_FONT
+        ws.auto_filter.ref = f"A1:{get_column_letter(len(cols))}{ROWS + 1}"
 
 
-# ---------------- Start Here ----------------
-ws = wb.active
-ws.title = "Start Here"
-ws.sheet_properties.tabColor = "C00000"
-ws.column_dimensions["A"].width = 26
-ws.column_dimensions["B"].width = 100
-ws["A1"] = "Construction ERP workbook"
-ws["A1"].font = Font(name=FONT, bold=True, size=18, color=NAVY)
-ws["A2"] = "Built from the Construction Intelligence Platform PRD v4 (R1 core). Amounts in PKR excluding recoverable tax."
-ws["A2"].font = Font(name=FONT, italic=True, color="595959")
+    # ---------------- Start Here ----------------
+    ws = wb.active
+    ws.title = "Start Here"
+    ws.sheet_properties.tabColor = "C00000"
+    ws.column_dimensions["A"].width = 26
+    ws.column_dimensions["B"].width = 100
+    ws["A1"] = "Construction ERP workbook"
+    ws["A1"].font = Font(name=FONT, bold=True, size=18, color=NAVY)
+    ws["A2"] = "Built from the Construction Intelligence Platform PRD v4 (R1 core). Amounts in PKR excluding recoverable tax."
+    ws["A2"].font = Font(name=FONT, italic=True, color="595959")
 
-r = 4
-ws.cell(row=r, column=1, value="How the tabs are marked").font = Font(name=FONT, bold=True, size=12)
-r += 1
-legend = [("Dark blue header", "You type in this column. Many columns have dropdowns."),
-          ("Grey header, (auto)", "Formula column. Do not type here; it fills in when the row's first column has a value."),
-          ("Grey italic row", "Example row showing the expected format. Delete it (right-click the row number, Delete row) when you start."),
-          ("Red cell in a Check column", "Something needs attention: duplicate, overdue, missing approval or over-limit."),
-          ]
-for a, b in legend:
-    ws.cell(row=r, column=1, value=a)
-    ws.cell(row=r, column=2, value=b)
+    r = 4
+    ws.cell(row=r, column=1, value="How the tabs are marked").font = Font(name=FONT, bold=True, size=12)
     r += 1
-ws["A5"].fill = PatternFill("solid", fgColor=NAVY)
-ws["A5"].font = Font(name=FONT, color="FFFFFF", bold=True)
-ws["A6"].fill = PatternFill("solid", fgColor=GREY_HDR)
-ws["A6"].font = Font(name=FONT, italic=True, bold=True)
-ws["A7"].font = EX_FONT
-ws["A8"].fill = PatternFill("solid", fgColor="F4CCCC")
-ws["A8"].font = Font(name=FONT, color="990000", bold=True)
+    legend = [("Dark blue header", "You type in this column. Many columns have dropdowns."),
+              ("Grey header, (auto)", "Formula column. Do not type here; it fills in when the row's first column has a value."),
+              ("Grey italic row", "Example row showing the expected format. Delete it (right-click the row number, Delete row) when you start."),
+              ("Red cell in a Check column", "Something needs attention: duplicate, overdue, missing approval or over-limit."),
+              ]
+    for a, b in legend:
+        ws.cell(row=r, column=1, value=a)
+        ws.cell(row=r, column=2, value=b)
+        r += 1
+    ws["A5"].fill = PatternFill("solid", fgColor=NAVY)
+    ws["A5"].font = Font(name=FONT, color="FFFFFF", bold=True)
+    ws["A6"].fill = PatternFill("solid", fgColor=GREY_HDR)
+    ws["A6"].font = Font(name=FONT, italic=True, bold=True)
+    ws["A7"].font = EX_FONT
+    ws["A8"].fill = PatternFill("solid", fgColor="F4CCCC")
+    ws["A8"].font = Font(name=FONT, color="990000", bold=True)
 
-r += 1
-ws.cell(row=r, column=1, value="Order to start adding data").font = Font(name=FONT, bold=True, size=12)
-r += 1
-steps = [
-    ("1. Settings and Lists", "Check standard hours and overtime multiplier. Add your own units, statuses or sources at the bottom of any Lists column."),
-    ("2. Cost Codes", "Replace the starter codes with your chart of cost codes."),
-    ("3. Parties, Workers", "Add clients, suppliers, subcontractors and workers. Mark supplier bank details as verified only after an independent check."),
-    ("4. Projects", "One row per project with contract value, retention, advance recovery and payment terms. Update U (remaining uncommitted cost) every month."),
-    ("5. Budget, BOQ", "Enter the approved budget by cost code and the contract BOQ lines with Status = Approved. Add approved variations as new BOQ lines (version VO-01 etc.)."),
-    ("6. Daily work", "Supervisors fill Daily Diary, Labour Attendance, Site Expenses, Goods Receipts, Quality & Punch and Safety."),
-    ("7. Procurement", "Requisitions, then Purchase Orders (one row per PO line), Goods Receipts, then Supplier Invoices against the PO line."),
-    ("8. Billing", "QS records cumulative quantities in Measurements, sets Status = Verified and the RA bill no. RA Bills totals the increments, then deducts retention and advance recovery. Record payments in Receipts."),
-    ("9. Changes", "Log every instruction in Change Events. Only Approved or Partly approved amounts raise the contract value; the rest stays as pending exposure."),
-    ("10. Review", "Dashboard shows each project's contract, cost, commitments, forecast, billing and alerts. Cost Report drills into one project by cost code."),
-]
-for a, b in steps:
-    ws.cell(row=r, column=1, value=a).font = Font(name=FONT, bold=True)
-    ws.cell(row=r, column=2, value=b)
     r += 1
-
-r += 1
-ws.cell(row=r, column=1, value="Key definitions (PRD section 4)").font = Font(name=FONT, bold=True, size=12)
-r += 1
-defs = [
-    ("Actual cost A", "Supplier invoices (not Draft) + labour attendance cost + site expenses."),
-    ("Committed cost C", "Approved PO amounts not yet invoiced."),
-    ("Uncommitted cost U", "PM/QS estimate of remaining work not in A or C (Projects tab). Left blank, the forecast shows as incomplete instead of zero."),
-    ("ETC and EAC", "ETC = C + U. EAC = A + C + U."),
-    ("Revised contract value", "Signed contract + approved variations from Change Events. Pending claims are excluded."),
-    ("Forecast margin", "Revised contract value minus EAC."),
-    ("Forecast variance", "Current approved budget minus EAC. Negative means forecast overrun."),
-    ("Verified, not billed", "Value of verified measurement increments not yet assigned to an RA bill (certification backlog)."),
-    ("RA bill net", "Gross certified work - retention (capped) - advance recovery (up to advance received) - other deductions."),
-]
-for a, b in defs:
-    ws.cell(row=r, column=1, value=a).font = Font(name=FONT, bold=True)
-    ws.cell(row=r, column=2, value=b)
+    ws.cell(row=r, column=1, value="Order to start adding data").font = Font(name=FONT, bold=True, size=12)
     r += 1
+    steps = [
+        ("1. Settings and Lists", "Check standard hours and overtime multiplier. Add your own units, statuses or sources at the bottom of any Lists column."),
+        ("2. Cost Codes", "Replace the starter codes with your chart of cost codes."),
+        ("3. Parties, Workers", "Add clients, suppliers, subcontractors and workers. Mark supplier bank details as verified only after an independent check."),
+        ("4. Projects", "One row per project with contract value, retention, advance recovery and payment terms. Update U (remaining uncommitted cost) every month."),
+        ("5. Budget, BOQ", "Enter the approved budget by cost code and the contract BOQ lines with Status = Approved. Add approved variations as new BOQ lines (version VO-01 etc.)."),
+        ("6. Daily work", "Supervisors fill Daily Diary, Labour Attendance, Site Expenses, Goods Receipts, Quality & Punch and Safety."),
+        ("7. Procurement", "Requisitions, then Purchase Orders (one row per PO line), Goods Receipts, then Supplier Invoices against the PO line."),
+        ("8. Billing", "QS records cumulative quantities in Measurements, sets Status = Verified and the RA bill no. RA Bills totals the increments, then deducts retention and advance recovery. Record payments in Receipts."),
+        ("9. Changes", "Log every instruction in Change Events. Only Approved or Partly approved amounts raise the contract value; the rest stays as pending exposure."),
+        ("10. Review", "Dashboard shows each project's contract, cost, commitments, forecast, billing and alerts. Cost Report drills into one project by cost code."),
+    ]
+    for a, b in steps:
+        ws.cell(row=r, column=1, value=a).font = Font(name=FONT, bold=True)
+        ws.cell(row=r, column=2, value=b)
+        r += 1
 
-r += 1
-ws.cell(row=r, column=1, value="Tab guide").font = Font(name=FONT, bold=True, size=12)
-r += 1
-for name in ORDER:
-    ws.cell(row=r, column=1, value=name).font = Font(name=FONT, bold=True)
-    ws.cell(row=r, column=2, value=SPECS[name]["purpose"])
     r += 1
-ws.cell(row=r, column=1, value="Dashboard").font = Font(name=FONT, bold=True)
-ws.cell(row=r, column=2, value="FIN-06 / UX-01: one row per project with cost, forecast, billing, collection and alert counts.")
-r += 1
-ws.cell(row=r, column=1, value="Cost Report").font = Font(name=FONT, bold=True)
-ws.cell(row=r, column=2, value="Pick a project in cell B1 to see budget, actual and committed cost by cost code.")
-r += 2
-ws.cell(row=r, column=1, value="Limits").font = Font(name=FONT, bold=True, size=12)
-r += 1
-ws.cell(row=r, column=2, value=(f"Each register has formulas pre-filled for {ROWS} rows. To add more, select the last row, copy it and paste below. "
-                                "A spreadsheet cannot enforce approvals or lock approved records: use Data > Protect ranges and version history "
-                                "to protect approved BOQ lines and closed months."))
-for row in ws.iter_rows(min_row=4, max_row=r, max_col=2):
-    for cell in row:
-        if cell.font is None or cell.font.name != FONT:
-            cell.font = Font(name=FONT, bold=cell.font.bold if cell.font else False,
-                             color=cell.font.color if cell.font else None)
-        cell.alignment = Alignment(wrap_text=True, vertical="top")
+    ws.cell(row=r, column=1, value="Key definitions (PRD section 4)").font = Font(name=FONT, bold=True, size=12)
+    r += 1
+    defs = [
+        ("Actual cost A", "Supplier invoices (not Draft) + labour attendance cost + site expenses."),
+        ("Committed cost C", "Approved PO amounts not yet invoiced."),
+        ("Uncommitted cost U", "PM/QS estimate of remaining work not in A or C (Projects tab). Left blank, the forecast shows as incomplete instead of zero."),
+        ("ETC and EAC", "ETC = C + U. EAC = A + C + U."),
+        ("Revised contract value", "Signed contract + approved variations from Change Events. Pending claims are excluded."),
+        ("Forecast margin", "Revised contract value minus EAC."),
+        ("Forecast variance", "Current approved budget minus EAC. Negative means forecast overrun."),
+        ("Verified, not billed", "Value of verified measurement increments not yet assigned to an RA bill (certification backlog)."),
+        ("RA bill net", "Gross certified work - retention (capped) - advance recovery (up to advance received) - other deductions."),
+    ]
+    for a, b in defs:
+        ws.cell(row=r, column=1, value=a).font = Font(name=FONT, bold=True)
+        ws.cell(row=r, column=2, value=b)
+        r += 1
 
-# ---------------- Settings ----------------
-st = wb.create_sheet("Settings")
-st.sheet_properties.tabColor = "C00000"
-st.column_dimensions["A"].width = 38
-st.column_dimensions["B"].width = 14
-st.column_dimensions["C"].width = 50
-st["A1"] = "Setting"; st["B1"] = "Value"; st["C1"] = "Used by"
-for cell in (st["A1"], st["B1"], st["C1"]):
-    style_header(cell)
-settings = [("Company name", "Your company", "Report headings"),
-            ("Standard hours per day", 8, "Labour Attendance cost = daily rate / standard hours x hours"),
-            ("Overtime multiplier", 1.5, "Labour Attendance overtime cost"),
-            ("Currency", "PKR", "All amounts")]
-for i, (a, b, cc) in enumerate(settings, start=2):
-    st.cell(row=i, column=1, value=a).font = Font(name=FONT)
-    v = st.cell(row=i, column=2, value=b)
-    v.font = Font(name=FONT, color="0000FF")
-    v.fill = PatternFill("solid", fgColor="FFF2CC")
-    st.cell(row=i, column=3, value=cc).font = Font(name=FONT)
+    r += 1
+    ws.cell(row=r, column=1, value="Tab guide").font = Font(name=FONT, bold=True, size=12)
+    r += 1
+    for name in ORDER:
+        ws.cell(row=r, column=1, value=name).font = Font(name=FONT, bold=True)
+        ws.cell(row=r, column=2, value=SPECS[name]["purpose"])
+        r += 1
+    ws.cell(row=r, column=1, value="Dashboard").font = Font(name=FONT, bold=True)
+    ws.cell(row=r, column=2, value="FIN-06 / UX-01: one row per project with cost, forecast, billing, collection and alert counts.")
+    r += 1
+    ws.cell(row=r, column=1, value="Cost Report").font = Font(name=FONT, bold=True)
+    ws.cell(row=r, column=2, value="Pick a project in cell B1 to see budget, actual and committed cost by cost code.")
+    r += 2
+    ws.cell(row=r, column=1, value="Limits").font = Font(name=FONT, bold=True, size=12)
+    r += 1
+    ws.cell(row=r, column=2, value=(f"Each register has formulas pre-filled for {ROWS} rows. To add more, select the last row, copy it and paste below. "
+                                    "A spreadsheet cannot enforce approvals or lock approved records: use Data > Protect ranges and version history "
+                                    "to protect approved BOQ lines and closed months."))
+    for row in ws.iter_rows(min_row=4, max_row=r, max_col=2):
+        for cell in row:
+            if cell.font is None or cell.font.name != FONT:
+                cell.font = Font(name=FONT, bold=cell.font.bold if cell.font else False,
+                                 color=cell.font.color if cell.font else None)
+            cell.alignment = Alignment(wrap_text=True, vertical="top")
 
-# ---------------- Registers ----------------
-for name in ORDER:
-    build_register(wb.create_sheet(name), name)
+    # ---------------- Settings ----------------
+    st = wb.create_sheet("Settings")
+    st.sheet_properties.tabColor = "C00000"
+    st.column_dimensions["A"].width = 38
+    st.column_dimensions["B"].width = 14
+    st.column_dimensions["C"].width = 50
+    st["A1"] = "Setting"; st["B1"] = "Value"; st["C1"] = "Used by"
+    for cell in (st["A1"], st["B1"], st["C1"]):
+        style_header(cell)
+    settings = [("Company name", "Your company", "Report headings"),
+                ("Standard hours per day", 8, "Labour Attendance cost = daily rate / standard hours x hours"),
+                ("Overtime multiplier", 1.5, "Labour Attendance overtime cost"),
+                ("Currency", "PKR", "All amounts")]
+    for i, (a, b, cc) in enumerate(settings, start=2):
+        st.cell(row=i, column=1, value=a).font = Font(name=FONT)
+        v = st.cell(row=i, column=2, value=b)
+        v.font = Font(name=FONT, color="0000FF")
+        v.fill = PatternFill("solid", fgColor="FFF2CC")
+        st.cell(row=i, column=3, value=cc).font = Font(name=FONT)
 
-# ---------------- Dashboard ----------------
-db = wb.create_sheet("Dashboard", 2)
-db.sheet_properties.tabColor = "C00000"
-P = LETTERS["Projects"]
+    # ---------------- Registers ----------------
+    for name in ORDER:
+        build_register(wb.create_sheet(name), name)
 
-
-def pj(key, r):
-    return f"Projects!${P[key]}{r}"
-
-
-dash_cols = [
-    ("Project", 11, None, lambda r: f'=IF(Projects!$A{r - 2}="","",Projects!$A{r - 2})'),
-    ("Project name", 26, None, lambda r: f'=IF($A{r}="","",Projects!$B{r - 2})'),
-    ("Status", 10, None, lambda r: f'=IF($A{r}="","",{pj("status", r - 2)})'),
-    ("Signed contract", 14, MONEY, lambda r: f'=IF($A{r}="","",N({pj("contract", r - 2)}))'),
-    ("Approved variations", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Change Events","approved_var")},{X("Change Events","project")},$A{r}))'),
-    ("Revised contract", 14, MONEY, lambda r: f'=IF($A{r}="","",D{r}+E{r})'),
-    ("Current budget", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Budget","current")},{X("Budget","project")},$A{r}))'),
-    ("Actual cost A", 14, MONEY, lambda r: (f'=IF($A{r}="","",SUMIFS({X("Supplier Invoices","amount")},{X("Supplier Invoices","project")},$A{r},{X("Supplier Invoices","status")},"<>Draft")'
-                                           f'+SUMIFS({X("Labour Attendance","cost")},{X("Labour Attendance","project")},$A{r})+SUMIFS({X("Site Expenses","amount")},{X("Site Expenses","project")},$A{r}))')),
-    ("Committed C", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Purchase Orders","open")},{X("Purchase Orders","project")},$A{r}))'),
-    ("Uncommitted U", 14, MONEY, lambda r: f'=IF($A{r}="","",IF({pj("u", r - 2)}="","Missing",{pj("u", r - 2)}))'),
-    ("EAC = A+C+U", 14, MONEY, lambda r: f'=IF($A{r}="","",IF(J{r}="Missing","Incomplete",H{r}+I{r}+J{r}))'),
-    ("Forecast variance", 14, MONEY, lambda r: f'=IF($A{r}="","",IF(K{r}="Incomplete","Incomplete",G{r}-K{r}))'),
-    ("Forecast margin", 14, MONEY, lambda r: f'=IF($A{r}="","",IF(K{r}="Incomplete","Incomplete",F{r}-K{r}))'),
-    ("Margin %", 10, PCT, lambda r: f'=IF(OR($A{r}="",K{r}="Incomplete"),"",IF(F{r}=0,0,M{r}/F{r}))'),
-    ("Verified, not billed", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Measurements","value")},{X("Measurements","project")},$A{r},{X("Measurements","bill")},""))'),
-    ("Billed net", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("RA Bills","net")},{X("RA Bills","project")},$A{r},{X("RA Bills","status")},"<>Draft",{X("RA Bills","status")},"<>Rejected"))'),
-    ("Received", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Receipts","amount")},{X("Receipts","project")},$A{r})+SUMIFS({X("Receipts","wht")},{X("Receipts","project")},$A{r}))'),
-    ("Receivable", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("RA Bills","outstanding")},{X("RA Bills","project")},$A{r}))'),
-    ("Overdue receivable", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("RA Bills","outstanding")},{X("RA Bills","project")},$A{r},{X("RA Bills","overdue")},">0"))'),
-    ("Retention held", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("RA Bills","ret")},{X("RA Bills","project")},$A{r},{X("RA Bills","status")},"<>Draft",{X("RA Bills","status")},"<>Rejected"))'),
-    ("Payables due", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Supplier Invoices","balance")},{X("Supplier Invoices","project")},$A{r}))'),
-    ("Pending claims", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Change Events","pending")},{X("Change Events","project")},$A{r}))'),
-    ("Open items needing action", 12, INT, lambda r: (f'=IF($A{r}="","",COUNTIFS({X("Change Events","project")},$A{r},{X("Change Events","check")},"?*")'
-                                                     f'+COUNTIFS({X("RFIs","project")},$A{r},{X("RFIs","check")},"?*")+COUNTIFS({X("Submittals","project")},$A{r},{X("Submittals","check")},"?*")'
-                                                     f'+COUNTIFS({X("Quality & Punch","project")},$A{r},{X("Quality & Punch","check")},"?*")+COUNTIFS({X("Safety","project")},$A{r},{X("Safety","check")},"?*")'
-                                                     f'+COUNTIFS({X("Lookahead","project")},$A{r},{X("Lookahead","ready")},"?*"))')),
-    ("Critical punch open", 10, INT, lambda r: f'=IF($A{r}="","",COUNTIFS({X("Quality & Punch","project")},$A{r},{X("Quality & Punch","check")},"Blocks handover"))'),
-]
-FIRST = 4
-db["A1"] = "Project dashboard (PKR)"
-db["A1"].font = Font(name=FONT, bold=True, size=14, color=NAVY)
-db["E1"] = "As of"
-db["E1"].font = Font(name=FONT, bold=True)
-db["F1"] = "=TODAY()"
-db["F1"].number_format = DATE
-db["A2"] = "All projects"
-db["A2"].font = Font(name=FONT, bold=True)
-for i, (h, w, fmt, f) in enumerate(dash_cols, start=1):
-    L = get_column_letter(i)
-    db.column_dimensions[L].width = w
-    style_header(db.cell(row=3, column=i, value=h), fill=TEAL)
-    for r in range(FIRST, FIRST + PROJ_ROWS):
-        cell = db.cell(row=r, column=i, value=f(r))
-        cell.font = Font(name=FONT)
-        if fmt:
-            cell.number_format = fmt
-    if fmt in (MONEY, INT) and i >= 4 and h not in ("Uncommitted U",):
-        tot = db.cell(row=2, column=i, value=f"=SUM({L}{FIRST}:{L}{FIRST + PROJ_ROWS - 1})")
-        tot.font = Font(name=FONT, bold=True)
-        tot.number_format = fmt
-        tot.fill = PatternFill("solid", fgColor="DDEBF7")
-for col_idx in (10, 11, 12, 13, 14):
-    db.cell(row=2, column=col_idx).value = None
-db.cell(row=2, column=10, value="Totals of A, C and forecast only make sense when every project has U.").font = Font(name=FONT, italic=True, color="595959")
-db.row_dimensions[3].height = 45
-db.freeze_panes = "C4"
-db.conditional_formatting.add(f"W{FIRST}:X{FIRST + PROJ_ROWS - 1}",
-                              FormulaRule(formula=[f"N(W{FIRST})>0"], fill=PatternFill("solid", fgColor="F4CCCC"),
-                                          font=Font(color="990000", bold=True)))
-db.conditional_formatting.add(f"J{FIRST}:L{FIRST + PROJ_ROWS - 1}",
-                              FormulaRule(formula=[f'OR(J{FIRST}="Missing",J{FIRST}="Incomplete")'],
-                                          fill=PatternFill("solid", fgColor="FFF2CC")))
-
-# ---------------- Cost Report ----------------
-cr = wb.create_sheet("Cost Report", 3)
-cr.sheet_properties.tabColor = "C00000"
-cr["A1"] = "Project"
-cr["A1"].font = Font(name=FONT, bold=True)
-cr["B1"] = "PRJ-001"
-cr["B1"].font = Font(name=FONT, bold=True, color="0000FF")
-cr["B1"].fill = PatternFill("solid", fgColor="FFF2CC")
-dv = DataValidation(type="list", formula1=PROJECTS, allow_blank=False)
-cr.add_data_validation(dv)
-dv.add("B1")
-cr["C1"] = f'=IFERROR(INDEX(Projects!$B:$B,MATCH(B1,Projects!$A:$A,0)),"Pick a project")'
-cr["C1"].font = Font(name=FONT, italic=True)
-cr_cols = [
-    ("Cost code", 12, None, lambda r: f"=IF('Cost Codes'!$A{r - 2}=\"\",\"\",'Cost Codes'!$A{r - 2})"),
-    ("Description", 28, None, lambda r: f"=IF($A{r}=\"\",\"\",'Cost Codes'!$B{r - 2})"),
-    ("Current budget", 15, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Budget","current")},{X("Budget","project")},$B$1,{X("Budget","code")},$A{r}))'),
-    ("Supplier invoices", 15, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Supplier Invoices","amount")},{X("Supplier Invoices","project")},$B$1,{X("Supplier Invoices","code")},$A{r},{X("Supplier Invoices","status")},"<>Draft"))'),
-    ("Labour", 15, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Labour Attendance","cost")},{X("Labour Attendance","project")},$B$1,{X("Labour Attendance","code")},$A{r}))'),
-    ("Site expenses", 15, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Site Expenses","amount")},{X("Site Expenses","project")},$B$1,{X("Site Expenses","code")},$A{r}))'),
-    ("Actual cost A", 15, MONEY, lambda r: f'=IF($A{r}="","",D{r}+E{r}+F{r})'),
-    ("Committed C", 15, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Purchase Orders","open")},{X("Purchase Orders","project")},$B$1,{X("Purchase Orders","code")},$A{r}))'),
-    ("Budget left after A and C", 17, MONEY, lambda r: f'=IF($A{r}="","",C{r}-G{r}-H{r})'),
-    ("% of budget used", 11, PCT, lambda r: f'=IF($A{r}="","",IF(C{r}=0,0,(G{r}+H{r})/C{r}))'),
-]
-for i, (h, w, fmt, f) in enumerate(cr_cols, start=1):
-    L = get_column_letter(i)
-    cr.column_dimensions[L].width = w
-    style_header(cr.cell(row=3, column=i, value=h), fill=TEAL)
-    for r in range(4, 104):
-        cell = cr.cell(row=r, column=i, value=f(r))
-        cell.font = Font(name=FONT)
-        if fmt:
-            cell.number_format = fmt
-    if fmt == MONEY:
-        t = cr.cell(row=2, column=i, value=f"=SUM({L}4:{L}103)")
-        t.number_format = MONEY
-        t.font = Font(name=FONT, bold=True)
-        t.fill = PatternFill("solid", fgColor="DDEBF7")
-cr["A2"] = "Total"
-cr["A2"].font = Font(name=FONT, bold=True)
-cr["J2"] = '=IF(C2=0,0,(G2+H2)/C2)'
-cr["J2"].number_format = PCT
-cr.row_dimensions[3].height = 32
-cr.freeze_panes = "C4"
-cr["L3"] = ("Costs entered without a cost code do not appear here. Check the Check column on Supplier Invoices.")
-cr["L3"].font = Font(name=FONT, italic=True, color="595959")
-
-# ---------------- Lists ----------------
-ls = wb.create_sheet("Lists")
-ls.sheet_properties.tabColor = "595959"
-for i, (name, values) in enumerate(LISTS.items(), start=1):
-    style_header(ls.cell(row=1, column=i, value=name), fill="595959")
-    ls.column_dimensions[get_column_letter(i)].width = max(14, len(name) + 2)
-    for j, v in enumerate(values, start=2):
-        ls.cell(row=j, column=i, value=v).font = Font(name=FONT)
-ls.row_dimensions[1].height = 32
-ls.freeze_panes = "A2"
+    # ---------------- Dashboard ----------------
+    db = wb.create_sheet("Dashboard", 2)
+    db.sheet_properties.tabColor = "C00000"
+    P = LETTERS["Projects"]
 
 
-out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Construction_ERP_Workbook.xlsx")
-wb.save(out)
-print(out, os.path.getsize(out), "bytes")
-print(wb.sheetnames)
+    def pj(key, r):
+        return f"Projects!${P[key]}{r}"
+
+
+    dash_cols = [
+        ("Project", 11, None, lambda r: f'=IF(Projects!$A{r - 2}="","",Projects!$A{r - 2})'),
+        ("Project name", 26, None, lambda r: f'=IF($A{r}="","",Projects!$B{r - 2})'),
+        ("Status", 10, None, lambda r: f'=IF($A{r}="","",{pj("status", r - 2)})'),
+        ("Signed contract", 14, MONEY, lambda r: f'=IF($A{r}="","",N({pj("contract", r - 2)}))'),
+        ("Approved variations", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Change Events","approved_var")},{X("Change Events","project")},$A{r}))'),
+        ("Revised contract", 14, MONEY, lambda r: f'=IF($A{r}="","",D{r}+E{r})'),
+        ("Current budget", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Budget","current")},{X("Budget","project")},$A{r}))'),
+        ("Actual cost A", 14, MONEY, lambda r: (f'=IF($A{r}="","",SUMIFS({X("Supplier Invoices","amount")},{X("Supplier Invoices","project")},$A{r},{X("Supplier Invoices","status")},"<>Draft")'
+                                               f'+SUMIFS({X("Labour Attendance","cost")},{X("Labour Attendance","project")},$A{r})+SUMIFS({X("Site Expenses","amount")},{X("Site Expenses","project")},$A{r}))')),
+        ("Committed C", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Purchase Orders","open")},{X("Purchase Orders","project")},$A{r}))'),
+        ("Uncommitted U", 14, MONEY, lambda r: f'=IF($A{r}="","",IF({pj("u", r - 2)}="","Missing",{pj("u", r - 2)}))'),
+        ("EAC = A+C+U", 14, MONEY, lambda r: f'=IF($A{r}="","",IF(J{r}="Missing","Incomplete",H{r}+I{r}+J{r}))'),
+        ("Forecast variance", 14, MONEY, lambda r: f'=IF($A{r}="","",IF(K{r}="Incomplete","Incomplete",G{r}-K{r}))'),
+        ("Forecast margin", 14, MONEY, lambda r: f'=IF($A{r}="","",IF(K{r}="Incomplete","Incomplete",F{r}-K{r}))'),
+        ("Margin %", 10, PCT, lambda r: f'=IF(OR($A{r}="",K{r}="Incomplete"),"",IF(F{r}=0,0,M{r}/F{r}))'),
+        ("Verified, not billed", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Measurements","value")},{X("Measurements","project")},$A{r},{X("Measurements","bill")},""))'),
+        ("Billed net", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("RA Bills","net")},{X("RA Bills","project")},$A{r},{X("RA Bills","status")},"<>Draft",{X("RA Bills","status")},"<>Rejected"))'),
+        ("Received", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Receipts","amount")},{X("Receipts","project")},$A{r})+SUMIFS({X("Receipts","wht")},{X("Receipts","project")},$A{r}))'),
+        ("Receivable", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("RA Bills","outstanding")},{X("RA Bills","project")},$A{r}))'),
+        ("Overdue receivable", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("RA Bills","outstanding")},{X("RA Bills","project")},$A{r},{X("RA Bills","overdue")},">0"))'),
+        ("Retention held", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("RA Bills","ret")},{X("RA Bills","project")},$A{r},{X("RA Bills","status")},"<>Draft",{X("RA Bills","status")},"<>Rejected"))'),
+        ("Payables due", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Supplier Invoices","balance")},{X("Supplier Invoices","project")},$A{r}))'),
+        ("Pending claims", 14, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Change Events","pending")},{X("Change Events","project")},$A{r}))'),
+        ("Open items needing action", 12, INT, lambda r: (f'=IF($A{r}="","",COUNTIFS({X("Change Events","project")},$A{r},{X("Change Events","check")},"?*")'
+                                                         f'+COUNTIFS({X("RFIs","project")},$A{r},{X("RFIs","check")},"?*")+COUNTIFS({X("Submittals","project")},$A{r},{X("Submittals","check")},"?*")'
+                                                         f'+COUNTIFS({X("Quality & Punch","project")},$A{r},{X("Quality & Punch","check")},"?*")+COUNTIFS({X("Safety","project")},$A{r},{X("Safety","check")},"?*")'
+                                                         f'+COUNTIFS({X("Lookahead","project")},$A{r},{X("Lookahead","ready")},"?*"))')),
+        ("Critical punch open", 10, INT, lambda r: f'=IF($A{r}="","",COUNTIFS({X("Quality & Punch","project")},$A{r},{X("Quality & Punch","check")},"Blocks handover"))'),
+    ]
+    FIRST = 4
+    db["A1"] = "Project dashboard (PKR)"
+    db["A1"].font = Font(name=FONT, bold=True, size=14, color=NAVY)
+    db["E1"] = "As of"
+    db["E1"].font = Font(name=FONT, bold=True)
+    db["F1"] = "=TODAY()"
+    db["F1"].number_format = DATE
+    db["A2"] = "All projects"
+    db["A2"].font = Font(name=FONT, bold=True)
+    for i, (h, w, fmt, f) in enumerate(dash_cols, start=1):
+        L = get_column_letter(i)
+        db.column_dimensions[L].width = w
+        style_header(db.cell(row=3, column=i, value=h), fill=TEAL)
+        for r in range(FIRST, FIRST + PROJ_ROWS):
+            cell = db.cell(row=r, column=i, value=f(r))
+            cell.font = Font(name=FONT)
+            if fmt:
+                cell.number_format = fmt
+        if fmt in (MONEY, INT) and i >= 4 and h not in ("Uncommitted U",):
+            tot = db.cell(row=2, column=i, value=f"=SUM({L}{FIRST}:{L}{FIRST + PROJ_ROWS - 1})")
+            tot.font = Font(name=FONT, bold=True)
+            tot.number_format = fmt
+            tot.fill = PatternFill("solid", fgColor="DDEBF7")
+    for col_idx in (10, 11, 12, 13, 14):
+        db.cell(row=2, column=col_idx).value = None
+    db.cell(row=2, column=10, value="Totals of A, C and forecast only make sense when every project has U.").font = Font(name=FONT, italic=True, color="595959")
+    db.row_dimensions[3].height = 45
+    db.freeze_panes = "C4"
+    db.conditional_formatting.add(f"W{FIRST}:X{FIRST + PROJ_ROWS - 1}",
+                                  FormulaRule(formula=[f"N(W{FIRST})>0"], fill=PatternFill("solid", fgColor="F4CCCC"),
+                                              font=Font(color="990000", bold=True)))
+    db.conditional_formatting.add(f"J{FIRST}:L{FIRST + PROJ_ROWS - 1}",
+                                  FormulaRule(formula=[f'OR(J{FIRST}="Missing",J{FIRST}="Incomplete")'],
+                                              fill=PatternFill("solid", fgColor="FFF2CC")))
+
+    # ---------------- Cost Report ----------------
+    cr = wb.create_sheet("Cost Report", 3)
+    cr.sheet_properties.tabColor = "C00000"
+    cr["A1"] = "Project"
+    cr["A1"].font = Font(name=FONT, bold=True)
+    cr["B1"] = "PRJ-001"
+    cr["B1"].font = Font(name=FONT, bold=True, color="0000FF")
+    cr["B1"].fill = PatternFill("solid", fgColor="FFF2CC")
+    dv = DataValidation(type="list", formula1=PROJECTS, allow_blank=False)
+    cr.add_data_validation(dv)
+    dv.add("B1")
+    cr["C1"] = f'=IFERROR(INDEX(Projects!$B:$B,MATCH(B1,Projects!$A:$A,0)),"Pick a project")'
+    cr["C1"].font = Font(name=FONT, italic=True)
+    cr_cols = [
+        ("Cost code", 12, None, lambda r: f"=IF('Cost Codes'!$A{r - 2}=\"\",\"\",'Cost Codes'!$A{r - 2})"),
+        ("Description", 28, None, lambda r: f"=IF($A{r}=\"\",\"\",'Cost Codes'!$B{r - 2})"),
+        ("Current budget", 15, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Budget","current")},{X("Budget","project")},$B$1,{X("Budget","code")},$A{r}))'),
+        ("Supplier invoices", 15, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Supplier Invoices","amount")},{X("Supplier Invoices","project")},$B$1,{X("Supplier Invoices","code")},$A{r},{X("Supplier Invoices","status")},"<>Draft"))'),
+        ("Labour", 15, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Labour Attendance","cost")},{X("Labour Attendance","project")},$B$1,{X("Labour Attendance","code")},$A{r}))'),
+        ("Site expenses", 15, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Site Expenses","amount")},{X("Site Expenses","project")},$B$1,{X("Site Expenses","code")},$A{r}))'),
+        ("Actual cost A", 15, MONEY, lambda r: f'=IF($A{r}="","",D{r}+E{r}+F{r})'),
+        ("Committed C", 15, MONEY, lambda r: f'=IF($A{r}="","",SUMIFS({X("Purchase Orders","open")},{X("Purchase Orders","project")},$B$1,{X("Purchase Orders","code")},$A{r}))'),
+        ("Budget left after A and C", 17, MONEY, lambda r: f'=IF($A{r}="","",C{r}-G{r}-H{r})'),
+        ("% of budget used", 11, PCT, lambda r: f'=IF($A{r}="","",IF(C{r}=0,0,(G{r}+H{r})/C{r}))'),
+    ]
+    for i, (h, w, fmt, f) in enumerate(cr_cols, start=1):
+        L = get_column_letter(i)
+        cr.column_dimensions[L].width = w
+        style_header(cr.cell(row=3, column=i, value=h), fill=TEAL)
+        for r in range(4, 104):
+            cell = cr.cell(row=r, column=i, value=f(r))
+            cell.font = Font(name=FONT)
+            if fmt:
+                cell.number_format = fmt
+        if fmt == MONEY:
+            t = cr.cell(row=2, column=i, value=f"=SUM({L}4:{L}103)")
+            t.number_format = MONEY
+            t.font = Font(name=FONT, bold=True)
+            t.fill = PatternFill("solid", fgColor="DDEBF7")
+    cr["A2"] = "Total"
+    cr["A2"].font = Font(name=FONT, bold=True)
+    cr["J2"] = '=IF(C2=0,0,(G2+H2)/C2)'
+    cr["J2"].number_format = PCT
+    cr.row_dimensions[3].height = 32
+    cr.freeze_panes = "C4"
+    cr["L3"] = ("Costs entered without a cost code do not appear here. Check the Check column on Supplier Invoices.")
+    cr["L3"].font = Font(name=FONT, italic=True, color="595959")
+
+    # ---------------- Lists ----------------
+    ls = wb.create_sheet("Lists")
+    ls.sheet_properties.tabColor = "595959"
+    for i, (name, values) in enumerate(LISTS.items(), start=1):
+        style_header(ls.cell(row=1, column=i, value=name), fill="595959")
+        ls.column_dimensions[get_column_letter(i)].width = max(14, len(name) + 2)
+        for j, v in enumerate(values, start=2):
+            ls.cell(row=j, column=i, value=v).font = Font(name=FONT)
+    ls.row_dimensions[1].height = 32
+    ls.freeze_panes = "A2"
+
+
+    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "Construction_ERP_Workbook.xlsx")
+    wb.save(out)
+    print(out, os.path.getsize(out), "bytes")
+    print(wb.sheetnames)
+
+
+if __name__ == "__main__":
+    build_xlsx()
