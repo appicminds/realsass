@@ -27,7 +27,7 @@ function onOpen() {
   ui.createMenu('Forms')
     .addItem('Start new week (Weekly Attendance)', 'startNewWeek')
     .addItem('Weekly Attendance row', 'form_Weekly_Attendance')
-    .addItem('Pay all balances for the week on Weekly Pay', 'payWeek')
+    .addItem('Pay all balances for a week', 'payWeek')
     .addItem('Record one payment', 'form_Worker_Payments')
     .addItem('Add entry to this tab', 'openFormForActiveSheet')
     .addSeparator()
@@ -410,13 +410,15 @@ function startNewWeek() {
 }
 
 
-// Record a payment for every worker who still has a balance in the week shown on Weekly Pay.
+// Record a payment for every worker who still has a balance for one week (asks which Thursday).
 function payWeek() {
   var ss = SpreadsheetApp.getActive();
   var ui = SpreadsheetApp.getUi();
-  var wp = ss.getSheetByName('Weekly Pay');
-  var thu = wp.getRange('B2').getDisplayValue().slice(-10);
-  var project = wp.getRange('B3').getDisplayValue();
+  var def = nextThursday_();
+  var ans = ui.prompt('Pay all', 'Pay every balance for the week ending on Thursday (yyyy-mm-dd). Leave blank for ' + def + '.', ui.ButtonSet.OK_CANCEL);
+  if (ans.getSelectedButton() !== ui.Button.OK) return;
+  var thu = String(ans.getResponseText() || '').trim() || def;
+  var project = '';
   var sh = ss.getSheetByName('Weekly Attendance');
   var h = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
   var iName = h.indexOf('Worker'), iProj = h.indexOf('Main project'), iBal = h.indexOf('Balance to pay (PKR) (auto)');
@@ -570,10 +572,7 @@ function setupButtons() {
   var weekS = Utilities.newBlob(Utilities.base64Decode(BTN_WEEK_SMALL), 'image/png', 'week_s.png');
   var payS = Utilities.newBlob(Utilities.base64Decode(BTN_PAY_SMALL), 'image/png', 'pay_s.png');
   var wpay = ss.getSheetByName('Weekly Pay');
-  if (wpay) {
-    removeButtons_(wpay);
-    wpay.insertImage(payS, 6, 1, 2, 2).setWidth(100).setHeight(30).assignScript('payWeek');
-  }
+  if (wpay) removeButtons_(wpay);
   FORM_SHEETS.forEach(function (name) {
     var sh = ss.getSheetByName(name);
     if (!sh) return;
@@ -589,6 +588,7 @@ function setupButtons() {
     }
     if (name === 'Weekly Attendance') {
       sh.insertImage(weekS, 2, 1, 3, 58).setWidth(76).setHeight(30).assignScript('startNewWeek');
+      sh.insertImage(payS, 3, 1, 3, 58).setWidth(76).setHeight(30).assignScript('payWeek');
     }
   });
   var home = ss.getSheetByName('Home');
