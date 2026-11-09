@@ -345,18 +345,22 @@ function startNewWeek() {
   });
   var w = ss.getSheetByName('Workers');
   var wv = w.getRange(1, 1, Math.max(w.getLastRow(), 2), w.getLastColumn()).getDisplayValues();
-  var h = wv[0], iId = h.indexOf('Worker ID'), iProj = h.indexOf('Usual project'), iAct = h.indexOf('Active');
-  var ids = [], projects = [];
+  var h = wv[0], iId = h.indexOf('Worker ID'), iName = h.indexOf('Name'), iProj = h.indexOf('Usual project'), iAct = h.indexOf('Active');
+  var dates = [], names = [], projects = [];
   for (var r = 1; r < wv.length; r++) {
     var id = wv[r][iId];
-    if (!id || have[id] || (iAct >= 0 && wv[r][iAct] === 'No')) continue;
-    ids.push([thu, id]);
+    if (!id || !wv[r][iName] || have[id] || (iAct >= 0 && wv[r][iAct] === 'No')) continue;
+    dates.push([thu]);
+    names.push([wv[r][iName]]);
     projects.push([iProj >= 0 ? wv[r][iProj] : '']);
   }
-  if (!ids.length) { ui.alert('Every active worker already has a row for the week ending ' + thu + '.'); return; }
+  if (!dates.length) { ui.alert('Every active worker already has a row for the week ending ' + thu + '.'); return; }
   var row = firstEmptyRow_(sh);
-  sh.getRange(row, 1, ids.length, 2).setValues(ids);
+  // column B (Worker ID) is a formula; write the date (A), worker name (C) and main project (E)
+  sh.getRange(row, 1, dates.length, 1).setValues(dates);
+  sh.getRange(row, 3, names.length, 1).setValues(names);
   sh.getRange(row, 5, projects.length, 1).setValues(projects);
+  var ids = dates;
   sh.activate();
   sh.setActiveRange(sh.getRange(row, 8));
   ss.toast(ids.length + ' workers added for the week ending ' + thu + '. Mark P, H, A or L for each day.', 'New week', 8);
@@ -394,7 +398,7 @@ function saveAttendance(payload) {
     var sh = SpreadsheetApp.getActive().getSheetByName('Labour Attendance');
     var h = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
     function col(name) { var i = h.indexOf(name); if (i < 0) throw new Error('Column missing: ' + name); return i + 1; }
-    var cDate = col('Date'), cProj = col('Project'), cW = col('Worker ID'), cSt = col('Status'), cSh = col('Shift'),
+    var cDate = col('Date'), cProj = col('Project'), cW = col('Worker'), cSt = col('Status'), cSh = col('Shift'),
         cHrs = col('Hours worked (blank = full day)'), cOt = col('Overtime hours'), cWork = col('Work / location'),
         cCode = col('Cost code'), cBy = col('Marked by');
     if (!payload.date || !payload.project) throw new Error('Pick a date and a project.');
@@ -410,11 +414,11 @@ function saveAttendance(payload) {
     var row = firstEmptyRow_(sh);
     payload.rows.forEach(function (x) {
       if (!x.status) return;
-      if (existing[x.id]) { skipped.push(x.id); return; }
+      if (existing[x.name]) { skipped.push(x.name); return; }
       while (sh.getRange(row, 1).getValue() !== '') row++;
       sh.getRange(row, cDate).setValue(date);
       sh.getRange(row, cProj).setValue(payload.project);
-      sh.getRange(row, cW).setValue(x.id);
+      sh.getRange(row, cW).setValue(x.name);
       sh.getRange(row, cSt).setValue(x.status);
       sh.getRange(row, cSh).setValue(payload.shift);
       if (x.hours !== '') sh.getRange(row, cHrs).setValue(Number(x.hours));
@@ -466,7 +470,7 @@ var ATT_HTML =
   'document.getElementById("tb").innerHTML=h||"<tr><td colspan=5>No active workers for this project. Add them on the Workers tab.</td></tr>";}' +
   'function setAll(s){document.querySelectorAll(".st").forEach(function(e){e.value=s});return false}' +
   'function send(){var rows=[];document.querySelectorAll(".st").forEach(function(e){var i=e.getAttribute("data-i");' +
-  'rows.push({id:d.workers[i].id,status:e.value,hours:document.querySelector(".hr[data-i=\'"+i+"\']").value,ot:document.querySelector(".ot[data-i=\'"+i+"\']").value})});' +
+  'rows.push({id:d.workers[i].id,name:d.workers[i].name,status:e.value,hours:document.querySelector(".hr[data-i=\'"+i+"\']").value,ot:document.querySelector(".ot[data-i=\'"+i+"\']").value})});' +
   'var m=document.getElementById("msg");m.style.display="block";m.className="";m.textContent="Saving...";' +
   'google.script.run.withSuccessHandler(function(r){m.className=r.skipped.length?"err":"ok";' +
   'm.textContent="Saved "+r.saved+" workers."+(r.skipped.length?" Already marked for this date and shift, not saved again: "+r.skipped.join(", "):"");})' +
