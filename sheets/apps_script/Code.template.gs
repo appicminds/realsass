@@ -130,6 +130,34 @@ function idInfo_(sheetName, sh) {
   return info;
 }
 
+
+// Dropdown options for a field whose sheet dropdown points at a range.
+// IDs from Projects, Parties, Workers and Cost Codes are shown with their names,
+// and party lists are narrowed to clients or suppliers when the field asks for one.
+var NAMED_LISTS = {'Projects': 2, 'Parties': 2, 'Workers': 2, 'Cost Codes': 2, 'Purchase Orders': 9};
+function rangeOptions_(range, label) {
+  var src = range.getSheet();
+  var name = src.getName();
+  var ids = range.getDisplayValues().map(function (r) { return r[0]; });
+  if (!NAMED_LISTS[name] || range.getColumn() !== 1) return ids.map(function (v) { return {v: v, t: v}; });
+  var n = ids.length;
+  var names = src.getRange(range.getRow(), NAMED_LISTS[name], n, 1).getDisplayValues();
+  var types = name === 'Parties' ? src.getRange(range.getRow(), 3, n, 1).getDisplayValues() : null;
+  var want = null;
+  if (types) {
+    if (/client/i.test(label)) want = ['Client'];
+    else if (/contractor/i.test(label)) want = ['Subcontractor'];
+    else if (/supplier/i.test(label)) want = ['Supplier', 'Subcontractor'];
+  }
+  var out = [];
+  for (var i = 0; i < n; i++) {
+    if (!ids[i]) continue;
+    if (want && types[i][0] && want.indexOf(types[i][0]) < 0) continue;
+    out.push({v: ids[i], t: names[i][0] ? ids[i] + '  -  ' + names[i][0] : ids[i]});
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------- generic form
 function getFormSpec(sheetName) {
   var sh = SpreadsheetApp.getActive().getSheetByName(sheetName);
@@ -155,11 +183,12 @@ function getFormSpec(sheetName) {
       var args = rule.getCriteriaValues();
       var opts = [];
       if (t === SpreadsheetApp.DataValidationCriteria.VALUE_IN_RANGE) {
-        opts = args[0].getDisplayValues().map(function (r) { return r[0]; });
+        opts = rangeOptions_(args[0], h);
       } else if (t === SpreadsheetApp.DataValidationCriteria.VALUE_IN_LIST) {
-        opts = args[0];
+        opts = args[0].map(function (v) { return {v: v, t: v}; });
       }
-      opts = opts.filter(function (v, i, a) { return v !== '' && a.indexOf(v) === i; });
+      var seen = {};
+      opts = opts.filter(function (o) { if (o.v === '' || seen[o.v]) return false; seen[o.v] = 1; return true; });
       if (opts.length) { f.type = 'list'; f.options = opts; }
     }
     fields.push(f);
@@ -256,7 +285,7 @@ var FORM_HTML =
   'function build(){var h="";spec.fields.forEach(function(f){' +
   'h+="<label>"+esc(f.label)+(f.required?" <span class=req>*</span>":"")+"</label>";' +
   'var id="c"+f.col;' +
-  'if(f.type=="list"){h+="<select id="+id+"><option value=\'\'></option>";f.options.forEach(function(o){h+="<option>"+esc(o)+"</option>"});h+="</select>"}' +
+  'if(f.type=="list"){h+="<select id="+id+"><option value=\'\'></option>";f.options.forEach(function(o){h+="<option value=\'"+esc(o.v).replace(/\'/g,"&#39;")+"\'>"+esc(o.t)+"</option>"});h+="</select>"}' +
   'else if(f.type=="date"){h+="<input type=date id="+id+(f.required||/^Date/.test(f.label)?" value="+today:"")+">"}' +
   'else if(f.type=="number"||f.type=="percent"){h+="<input type=number step=any id="+id+(f.type=="percent"?" placeholder=\'e.g. 5 for 5%\'":"")+">"}' +
   'else if(/description|notes|question|response|work done|blockers/i.test(f.label)){h+="<textarea rows=2 id="+id+"></textarea>"}' +
@@ -294,8 +323,9 @@ function getAttendanceData() {
     workers.push({id: wv[r][iId], name: wv[r][iName], trade: wv[r][iTrade], project: iProj >= 0 ? wv[r][iProj] : ''});
   }
   var p = ss.getSheetByName('Projects');
-  var projects = p.getRange(2, 1, Math.max(p.getLastRow() - 1, 1), 1).getDisplayValues()
-    .map(function (r) { return r[0]; }).filter(String);
+  var projects = p.getRange(2, 1, Math.max(p.getLastRow() - 1, 1), 2).getDisplayValues()
+    .filter(function (r) { return r[0]; })
+    .map(function (r) { return {v: r[0], t: r[1] ? r[0] + '  -  ' + r[1] : r[0]}; });
   var cc = ss.getSheetByName('Cost Codes');
   var codes = cc.getRange(2, 1, Math.max(cc.getLastRow() - 1, 1), 1).getDisplayValues()
     .map(function (r) { return r[0]; }).filter(String);
@@ -372,7 +402,7 @@ var ATT_HTML =
   'var d=<?!= data ?>;' +
   'function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;"}[c]})}' +
   'document.getElementById("date").value=d.today;' +
-  'document.getElementById("proj").innerHTML=d.projects.map(function(p){return"<option>"+esc(p)+"</option>"}).join("");' +
+  'document.getElementById("proj").innerHTML=d.projects.map(function(p){return"<option value=\'"+esc(p.v)+"\'>"+esc(p.t)+"</option>"}).join("");' +
   'document.getElementById("code").innerHTML="<option></option>"+d.codes.map(function(p){return"<option"+(/LAB/.test(p)?" selected":"")+">"+esc(p)+"</option>"}).join("");' +
   'function filter(){var p=document.getElementById("proj").value,all=document.getElementById("all").checked,h="";' +
   'd.workers.forEach(function(w,i){if(!all&&w.project&&w.project!=p)return;' +
