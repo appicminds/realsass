@@ -8,7 +8,7 @@
 
 // Tabs that get a form. The form is built from the tab's header row, dropdowns and formats.
 var FORM_SHEETS = [
-  'Labour Attendance', 'Labour Advances', 'Site Expenses', 'Daily Diary',
+  'Weekly Attendance', 'Labour Attendance', 'Labour Advances', 'Site Expenses', 'Daily Diary',
   'Supplier Invoices', 'Purchase Orders', 'Goods Receipts', 'Requisitions',
   'Measurements', 'RA Bills', 'Receipts', 'Change Events',
   'Projects', 'Workers', 'Parties', 'Budget', 'BOQ', 'Cost Codes',
@@ -19,11 +19,14 @@ var BTN_ADD = '__BTN_ADD__';
 var BTN_ATT = '__BTN_ATT__';
 var BTN_ADD_SMALL = '__BTN_ADD_SMALL__';
 var BTN_ATT_SMALL = '__BTN_ATT_SMALL__';
+var BTN_WEEK_SMALL = '__BTN_WEEK_SMALL__';
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('Forms')
-    .addItem('Mark attendance for all workers', 'openAttendanceForm')
+    .addItem('Start new week (Weekly Attendance)', 'startNewWeek')
+    .addItem('Weekly Attendance row', 'form_Weekly_Attendance')
+    .addItem('Mark attendance for all workers (daily tab)', 'openAttendanceForm')
     .addItem('Add entry to this tab', 'openFormForActiveSheet')
     .addSeparator()
     .addItem('Labour Attendance (one worker)', 'form_Labour_Attendance')
@@ -45,6 +48,7 @@ function onOpen() {
 }
 
 // Menu and button targets (Apps Script needs one named function per target).
+function form_Weekly_Attendance() { openForm('Weekly Attendance'); }
 function form_Labour_Attendance() { openForm('Labour Attendance'); }
 function form_Labour_Advances() { openForm('Labour Advances'); }
 function form_Site_Expenses() { openForm('Site Expenses'); }
@@ -252,7 +256,8 @@ function openForm(sheetName) {
   var spec = getFormSpec(sheetName);
   var t = HtmlService.createTemplate(FORM_HTML);
   t.spec = JSON.stringify(spec);
-  t.today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  t.today = sheetName === 'Weekly Attendance' ? nextThursday_()
+      : Utilities.formatDate(new Date(), SpreadsheetApp.getActive().getSpreadsheetTimeZone(), 'yyyy-MM-dd');
   var html = t.evaluate().setWidth(520).setHeight(620);
   SpreadsheetApp.getUi().showModalDialog(html, sheetName);
 }
@@ -307,6 +312,55 @@ var FORM_HTML =
   '.withFailureHandler(function(e){m.className="err";m.textContent=e.message}).saveFormRow(spec.sheet,v);}' +
   'build();' +
   '</script></body></html>';
+
+
+// ---------------------------------------------------------------- weekly attendance
+// Weeks run Friday to Thursday; wages are paid on Thursday.
+function nextThursday_() {
+  var tz = SpreadsheetApp.getActive().getSpreadsheetTimeZone();
+  var now = new Date();
+  var iso = Number(Utilities.formatDate(now, tz, 'u'));  // 1 = Monday ... 7 = Sunday
+  var add = (4 - iso + 7) % 7;                            // days until Thursday (0 if today is Thursday)
+  return Utilities.formatDate(new Date(now.getTime() + add * 86400000), tz, 'yyyy-MM-dd');
+}
+
+function startNewWeek() {
+  var ss = SpreadsheetApp.getActive();
+  var ui = SpreadsheetApp.getUi();
+  var def = nextThursday_();
+  var ans = ui.prompt('Start new week', 'Week ending on Thursday (yyyy-mm-dd). Leave blank for ' + def + '.', ui.ButtonSet.OK_CANCEL);
+  if (ans.getSelectedButton() !== ui.Button.OK) return;
+  var thu = String(ans.getResponseText() || '').trim() || def;
+  var p = thu.split('-');
+  var dt = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  if (p.length !== 3 || isNaN(dt.getTime()) || dt.getDay() !== 4) {
+    ui.alert('"' + thu + '" is not a Thursday. Type the date like ' + def + '.');
+    return;
+  }
+  var sh = ss.getSheetByName('Weekly Attendance');
+  var last = Math.max(sh.getLastRow(), 2);
+  var have = {};
+  sh.getRange(2, 1, last - 1, 2).getDisplayValues().forEach(function (r) {
+    if (r[0].slice(-10) === thu) have[r[1]] = true;
+  });
+  var w = ss.getSheetByName('Workers');
+  var wv = w.getRange(1, 1, Math.max(w.getLastRow(), 2), w.getLastColumn()).getDisplayValues();
+  var h = wv[0], iId = h.indexOf('Worker ID'), iProj = h.indexOf('Usual project'), iAct = h.indexOf('Active');
+  var ids = [], projects = [];
+  for (var r = 1; r < wv.length; r++) {
+    var id = wv[r][iId];
+    if (!id || have[id] || (iAct >= 0 && wv[r][iAct] === 'No')) continue;
+    ids.push([thu, id]);
+    projects.push([iProj >= 0 ? wv[r][iProj] : '']);
+  }
+  if (!ids.length) { ui.alert('Every active worker already has a row for the week ending ' + thu + '.'); return; }
+  var row = firstEmptyRow_(sh);
+  sh.getRange(row, 1, ids.length, 2).setValues(ids);
+  sh.getRange(row, 5, projects.length, 1).setValues(projects);
+  sh.activate();
+  sh.setActiveRange(sh.getRange(row, 8));
+  ss.toast(ids.length + ' workers added for the week ending ' + thu + '. Mark P, H, A or L for each day.', 'New week', 8);
+}
 
 // ---------------------------------------------------------------- bulk attendance
 function getAttendanceData() {
@@ -429,6 +483,7 @@ function setupButtons() {
   var att = Utilities.newBlob(Utilities.base64Decode(BTN_ATT), 'image/png', 'att.png');
   var addS = Utilities.newBlob(Utilities.base64Decode(BTN_ADD_SMALL), 'image/png', 'add_s.png');
   var attS = Utilities.newBlob(Utilities.base64Decode(BTN_ATT_SMALL), 'image/png', 'att_s.png');
+  var weekS = Utilities.newBlob(Utilities.base64Decode(BTN_WEEK_SMALL), 'image/png', 'week_s.png');
   FORM_SHEETS.forEach(function (name) {
     var sh = ss.getSheetByName(name);
     if (!sh) return;
@@ -442,6 +497,9 @@ function setupButtons() {
     if (name === 'Labour Attendance') {
       sh.insertImage(attS, 2, 1, 3, 58).setWidth(96).setHeight(30).assignScript('openAttendanceForm');
     }
+    if (name === 'Weekly Attendance') {
+      sh.insertImage(weekS, 2, 1, 3, 58).setWidth(76).setHeight(30).assignScript('startNewWeek');
+    }
   });
   var home = ss.getSheetByName('Home');
   if (home) {
@@ -452,9 +510,9 @@ function setupButtons() {
       if (FORM_SHEETS.indexOf(label) >= 0) {
         // sits exactly over the green "+ Add" mock button in column C
         home.insertImage(addS, 3, r + 1, 2, 2).setWidth(106).setHeight(26).assignScript(fnName_(label));
-        if (label === 'Labour Attendance') {
-          // over the "Mark all" mock button in column D
-          home.insertImage(attS, 4, r + 1, 2, 2).setWidth(106).setHeight(26).assignScript('openAttendanceForm');
+        if (label === 'Weekly Attendance') {
+          // over the "New week" mock button in column D
+          home.insertImage(weekS, 4, r + 1, 2, 2).setWidth(106).setHeight(26).assignScript('startNewWeek');
         }
       }
     }
@@ -470,6 +528,6 @@ function removeButtons_(sh) {
   sh.getImages().forEach(function (img) {
     var s = '';
     try { s = img.getScript(); } catch (e) {}
-    if (s && (s.indexOf('form_') === 0 || s === 'openAttendanceForm')) img.remove();
+    if (s && (s.indexOf('form_') === 0 || s === 'openAttendanceForm' || s === 'startNewWeek')) img.remove();
   });
 }
