@@ -84,6 +84,52 @@ function openFormForActiveSheet() {
   openForm(name);
 }
 
+
+// ---------------------------------------------------------------- automatic IDs
+// Registers whose first column is a running ID. The form fills in the next free number.
+var ID_PREFIX = {
+  'Projects': 'PRJ-', 'Workers': 'W-', 'Measurements': 'M-', 'RA Bills': 'RA-', 'Receipts': 'RC-',
+  'Change Events': 'CE-', 'Requisitions': 'RQ-', 'Goods Receipts': 'GRN-', 'Supplier Invoices': 'SI-',
+  'RFIs': 'RFI-', 'Submittals': 'SBM-', 'Quality & Punch': 'QC-', 'Safety': 'SF-', 'Leads': 'LD-'
+};
+var PARTY_PREFIX = {'Client': 'CL-', 'Supplier': 'SUP-', 'Subcontractor': 'SUB-', 'Consultant': 'CON-'};
+
+function colValues_(sh, col) {
+  var n = sh.getLastRow() - 1;
+  if (n < 1) return [];
+  return sh.getRange(2, col, n, 1).getDisplayValues().map(function (r) { return r[0]; }).filter(String);
+}
+
+// Next ID after the highest existing one with this prefix, keeping its zero padding (PRJ-009 -> PRJ-010).
+function nextId_(values, prefix, minWidth) {
+  var max = 0, width = minWidth || 3;
+  var re = new RegExp('^' + prefix.replace(/[-]/g, '\\-') + '(\\d+)$');
+  values.forEach(function (v) {
+    var m = re.exec(String(v).trim());
+    if (m) { max = Math.max(max, Number(m[1])); width = Math.max(width, m[1].length); }
+  });
+  var num = String(max + 1);
+  while (num.length < width) num = '0' + num;
+  return prefix + num;
+}
+
+function idInfo_(sheetName, sh) {
+  var info = {};
+  if (ID_PREFIX[sheetName]) {
+    info.idValue = nextId_(colValues_(sh, 1), ID_PREFIX[sheetName], sheetName === 'RA Bills' ? 2 : 3);
+  } else if (sheetName === 'Parties') {
+    var ids = colValues_(sh, 1);
+    info.partyNext = {};
+    Object.keys(PARTY_PREFIX).forEach(function (t) { info.partyNext[t] = nextId_(ids, PARTY_PREFIX[t], 3); });
+  } else if (sheetName === 'Purchase Orders') {
+    var poNos = colValues_(sh, 2);
+    info.poNext = nextId_(poNos, 'PO-', 3);
+    info.poLines = {};
+    poNos.forEach(function (p) { info.poLines[p] = (info.poLines[p] || 0) + 1; });
+  }
+  return info;
+}
+
 // ---------------------------------------------------------------- generic form
 function getFormSpec(sheetName) {
   var sh = SpreadsheetApp.getActive().getSheetByName(sheetName);
@@ -119,7 +165,10 @@ function getFormSpec(sheetName) {
     fields.push(f);
   }
   if (fields.length) fields[0].required = true;
-  return {sheet: sheetName, fields: fields};
+  var spec = {sheet: sheetName, fields: fields};
+  var info = idInfo_(sheetName, sh);
+  Object.keys(info).forEach(function (k) { spec[k] = info[k]; });
+  return spec;
 }
 
 function firstEmptyRow_(sh) {
@@ -146,7 +195,14 @@ function saveFormRow(sheetName, values) {
     var spec = getFormSpec(sheetName);
     var sh = SpreadsheetApp.getActive().getSheetByName(sheetName);
     var first = spec.fields[0];
+    var used = colValues_(sh, 1);
+    // A running ID that someone else just used: take the next free one instead of saving a duplicate.
+    if (ID_PREFIX[sheetName] && used.indexOf(String(values[first.col])) >= 0) values[first.col] = spec.idValue;
     if (!values[first.col]) throw new Error('"' + first.label + '" is required.');
+    if ((sheetName === 'Parties' || sheetName === 'Purchase Orders' || sheetName === 'Workers' || sheetName === 'Projects')
+        && used.indexOf(String(values[first.col])) >= 0) {
+      throw new Error('"' + values[first.col] + '" already exists. Change it, or close and open the form again for a new number.');
+    }
     var row = firstEmptyRow_(sh);
     spec.fields.forEach(function (f) {
       var v = toCell_(values[f.col], f.type);
@@ -157,7 +213,7 @@ function saveFormRow(sheetName, values) {
     var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
     var ci = headers.indexOf('Check (auto)');
     if (ci >= 0) check = sh.getRange(row, ci + 1).getDisplayValue();
-    return {row: row, check: check};
+    return {row: row, check: check, id: values[first.col], spec: getFormSpec(sheetName)};
   } finally {
     lock.releaseLock();
   }
@@ -204,12 +260,20 @@ var FORM_HTML =
   'else if(f.type=="date"){h+="<input type=date id="+id+(f.required||/^Date/.test(f.label)?" value="+today:"")+">"}' +
   'else if(f.type=="number"||f.type=="percent"){h+="<input type=number step=any id="+id+(f.type=="percent"?" placeholder=\'e.g. 5 for 5%\'":"")+">"}' +
   'else if(/description|notes|question|response|work done|blockers/i.test(f.label)){h+="<textarea rows=2 id="+id+"></textarea>"}' +
-  'else{h+="<input id="+id+">"}});document.getElementById("f").innerHTML=h;}' +
+  'else{h+="<input id="+id+">"}});document.getElementById("f").innerHTML=h;wire();}' +
+  'function fld(re){for(var i=0;i<spec.fields.length;i++){if(re.test(spec.fields[i].label))return document.getElementById("c"+spec.fields[i].col)}return null}' +
+  'var idEl=null;function setIds(){idEl=document.getElementById("c"+spec.fields[0].col);' +
+  'if(spec.idValue){idEl.value=spec.idValue}' +
+  'if(spec.partyNext){var t=fld(/^Type$/);if(t&&spec.partyNext[t.value])idEl.value=spec.partyNext[t.value]}' +
+  'if(spec.poNext){var po=fld(/^PO no/);if(po){if(!po.value)po.value=spec.poNext;idEl.value=po.value+"-"+((spec.poLines[po.value]||0)+1)}}}' +
+  'function wire(){var t=fld(/^Type$/);if(t&&spec.partyNext)t.onchange=setIds;var po=fld(/^PO no/);if(po&&spec.poNext)po.oninput=setIds;' +
+  'var first=spec.fields[0];if(spec.idValue||spec.partyNext||spec.poNext){var l=document.querySelectorAll("label")[0];l.innerHTML+=" <small style=\\"font-weight:normal;color:#666\\">(filled in for you)</small>"}setIds()}' +
   'function send(again){var v={};spec.fields.forEach(function(f){v[f.col]=document.getElementById("c"+f.col).value});' +
   'var m=document.getElementById("msg");m.style.display="block";m.className="";m.textContent="Saving...";' +
   'google.script.run.withSuccessHandler(function(r){' +
   'if(again){m.className=r.check?"err":"ok";m.textContent="Saved in row "+r.row+(r.check?". Check: "+r.check:".");' +
-  'spec.fields.forEach(function(f){var e=document.getElementById("c"+f.col);if(f.type!="date"&&!/project|status|shift|cost code|marked by|approved by/i.test(f.label))e.value=""});}' +
+  'spec.fields.forEach(function(f){var e=document.getElementById("c"+f.col);if(f.type!="date"&&!/project|status|shift|cost code|marked by|approved by|^type$|^po no|^supplier/i.test(f.label))e.value=""});' +
+  'if(r.spec){spec.idValue=r.spec.idValue;spec.partyNext=r.spec.partyNext;spec.poNext=r.spec.poNext;spec.poLines=r.spec.poLines;setIds()}}' +
   'else{google.script.host.close()}})' +
   '.withFailureHandler(function(e){m.className="err";m.textContent=e.message}).saveFormRow(spec.sheet,v);}' +
   'build();' +
