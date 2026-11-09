@@ -8,7 +8,7 @@
 
 // Tabs that get a form. The form is built from the tab's header row, dropdowns and formats.
 var FORM_SHEETS = [
-  'Weekly Attendance', 'Labour Attendance', 'Labour Advances', 'Site Expenses', 'Daily Diary',
+  'Weekly Attendance', 'Worker Payments', 'Labour Advances', 'Site Expenses', 'Daily Diary',
   'Supplier Invoices', 'Purchase Orders', 'Goods Receipts', 'Requisitions',
   'Measurements', 'RA Bills', 'Receipts', 'Change Events',
   'Projects', 'Workers', 'Parties', 'Budget', 'BOQ', 'Cost Codes',
@@ -20,16 +20,17 @@ var BTN_ATT = 'iVBORw0KGgoAAAANSUhEUgAAASwAAABACAYAAACgPErgAAAMb0lEQVR42u2deUBTV
 var BTN_ADD_SMALL = 'iVBORw0KGgoAAAANSUhEUgAAAPAAAABUCAYAAAC82LpqAAAGdklEQVR42u3dfUxVdRzH8c+5gGCAAWEgKobKNM0IVKIsSlR8hCG6THNrrWRtrlbLudUfudp60taTtaZt1foj6Q+dQ7cCpYa0RJ0aFWo+tTCKyvChq6IXpD9aLDnn3nsuevQceb/+u79z+N5zz/Xj93sO96qhXihYPrRLAK6ohpXHjEh/xiC0gHfDbBBcwLtB9hFewL3CZdAguIB3u7GP8ALe7cY+TgvgXT66L+DdLuwjvIB3Q8wIDXh9hKb7At7swnRgwOsdGIA3GYzPAB0YAAEGQIABAgyAAAMgwAAIMECAARBgAAQYIMAACDAAAgyAAAPXu2hOAS7HY9Oe1qNTnzatr615XR/VvuP6+gQY11Tlsq80bOCIoNsXrLpfzcePcqIYoeE2tw7JCRleSZo5fh4nigDDjWbZCOeM3HIZhsHJYoTu21YvWacJIyd1P17yXpl+aN5z7d64qGhNzSkNu1968mDlZhVoz9HtvIl0YLjF3aOKlBSfYmtfxmgCDJeJJJRF42YpNiaOk8YIDTdI7H+jJo2eYlo/e96vHQe3afK4WZes3xCboPvGzlDNtxttP0dMVIxKJj6oottna3jaKCXEJarNf1yHWw+oZu9GbW2s0sWui71+DU7XJ8BwrWk5pYqJ7mdar9+3RbXfbTYFWPr3hpfdAI9IH62XF7+vzB53uNOSMpSWlKFJo4v0wKRHtKLyyV4dv9P1GaHhyfF5a+MmNRys05l2v2nbxJH3KDXx5rC1s9Ky9W5FpSlcPY3NzNV7FZ8pIzkzomN3uj4BhqsNTc3SbZl5pnV/+9/acbBOgY4Lqt9fY36jfVGanjs39DgWFa0XFq62fXMsLSkjomtxp+sTYLi/++ZZ/4He1lStQGdAklTbuDmizv2fkokPKnvQGMttn+/ZoEVvTFHhcyM099W79PGXqyO+RnW6PtfAcDXDMDQjrzzo+PyfHQfr5G//WwlxiaZrz+yMsTr0a5Nljfl3PWy5XvvdZr342VPdj1tPtGhN9Sq1B87p8enLbR+/0/UJcB9Vmr9Qz857LaKf+WDpxpDb/zzVqtKX86/ocebckq9ByUNM66fPntSuw/XdjwOdAdU31Vh23Jl55ZYBTh2QpuHpoyyfd23165brn25bq8WFjyuh/4Cwx+50fUZouF6wj07WNX2hjs6OHl1tk+W+xXeUyeeLMq2PGZJjuX/riZagX4YIdFzQnp8abB270/UJMFytX3SsJo+bHXZ87h6jD22T/9xp0/pNiQN1Z3ahaT0lcaBl7V/afg55XC1//Wzr+J2uT4DhaveNnW66ppWkk2fatPuI+XPOHZ0dqmuqtqxlNVrHxyZY7nv+wrmQx9UeZvvVqs81cB9WtXOdqnauC7nPtf4yQ7A7yEnxKfr6lci+71s4pljxcQmX/L74zHm/5b6x/fqHrBUXZvvVqk8HhmulJKRajr29FRsTp6Jxcy5Za/Mft9x3SMqwkLUG3zTM1nM6XZ8Aw7Wm5861vPF0OXreENt37FvL/dKTByszdbjltpjofsrLKrD1fE7XJ8BwLSc+jdTzV1LHT/+uo60/Wu67pPgZy/VFhRW2f8XjdH0CDFcakT466KeXLodhGKZPda3f/onlvlNzSvT8grd0y80jFRMVo7SkwaooXqaK4mURPafT9fsibmK53Kzx8y3X/edOa85LE3Q+0B62xouL3tU0i3+9Y0ZeuT6sfbv78aZdlSoreMjyL4yZeeWaGeRTYHY5XZ8ODHe9Ob4oFeeWWW77Yu8GW+GVFPQO+9DULN02bHz340BnQCvWPaFTZ0/YqvvHqd/0+e71tl+P0/UJMFwlP/veoF8BrNpZabvO7iPfqKWt2brD9xijf/r9kJauWaDmP4+ErHmg5XstXbNAv55ojug1OV2fERquEWyk3P9Low79ts92na6uLm3aVWn5xYCpOSV6s2pF9zeZJOlI6wEtfrNYpfkLNeX2OcpKy1Z83ACd9P+lw637taWxStV7N+rixc5evS6n6/clRsHyoV2cBoARGgABBkCAAQIMgAADIMAACDBAgAEQYAAEGCDAAAgwAAIMgAADBBgAAQZwhQPcsPKYwWkAvKdh5TGDDgwwQgO4ZgFmjAa8Nz7TgYHrZYSmCwPe6r6mDkyIAe+ElxEauF5GaLow4K3uK0khw8r/2gC4M7i2Rmi6MeDe8IbtwHRjwJ3BjTjAhBlwR2j/7x/FdGHKob2LmAAAAABJRU5ErkJggg==';
 var BTN_ATT_SMALL = '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';
 var BTN_WEEK_SMALL = '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';
+var BTN_PAY_SMALL = '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';
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('Forms')
     .addItem('Start new week (Weekly Attendance)', 'startNewWeek')
     .addItem('Weekly Attendance row', 'form_Weekly_Attendance')
-    .addItem('Mark attendance for all workers (daily tab)', 'openAttendanceForm')
+    .addItem('Pay all balances for the week on Weekly Pay', 'payWeek')
+    .addItem('Record one payment', 'form_Worker_Payments')
     .addItem('Add entry to this tab', 'openFormForActiveSheet')
     .addSeparator()
-    .addItem('Labour Attendance (one worker)', 'form_Labour_Attendance')
     .addItem('Labour Advance', 'form_Labour_Advances')
     .addItem('Site Expense', 'form_Site_Expenses')
     .addItem('Daily Diary', 'form_Daily_Diary')
@@ -49,7 +50,7 @@ function onOpen() {
 
 // Menu and button targets (Apps Script needs one named function per target).
 function form_Weekly_Attendance() { openForm('Weekly Attendance'); }
-function form_Labour_Attendance() { openForm('Labour Attendance'); }
+function form_Worker_Payments() { openForm('Worker Payments'); }
 function form_Labour_Advances() { openForm('Labour Advances'); }
 function form_Site_Expenses() { openForm('Site Expenses'); }
 function form_Daily_Diary() { openForm('Daily Diary'); }
@@ -366,6 +367,43 @@ function startNewWeek() {
   ss.toast(ids.length + ' workers added for the week ending ' + thu + '. Mark P, H, A or L for each day.', 'New week', 8);
 }
 
+
+// Record a payment for every worker who still has a balance in the week shown on Weekly Pay.
+function payWeek() {
+  var ss = SpreadsheetApp.getActive();
+  var ui = SpreadsheetApp.getUi();
+  var wp = ss.getSheetByName('Weekly Pay');
+  var thu = wp.getRange('B2').getDisplayValue().slice(-10);
+  var project = wp.getRange('B3').getDisplayValue();
+  var sh = ss.getSheetByName('Weekly Attendance');
+  var h = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  var iName = h.indexOf('Worker'), iProj = h.indexOf('Main project'), iBal = h.indexOf('Balance to pay (PKR) (auto)');
+  if (iName < 0 || iBal < 0) { ui.alert('Weekly Attendance columns not found.'); return; }
+  var last = Math.max(sh.getLastRow(), 2);
+  var disp = sh.getRange(2, 1, last - 1, sh.getLastColumn()).getDisplayValues();
+  var vals = sh.getRange(2, iBal + 1, last - 1, 1).getValues();
+  var rows = [], total = 0;
+  for (var i = 0; i < disp.length; i++) {
+    if (disp[i][0].slice(-10) !== thu) continue;
+    if (project && disp[i][iProj] !== project) continue;
+    var bal = Number(vals[i][0]) || 0;
+    if (bal <= 0) continue;
+    rows.push([disp[i][iName], bal]);
+    total += bal;
+  }
+  if (!rows.length) { ui.alert('Nothing to pay for the week ending ' + thu + (project ? ' on ' + project : '') + '.'); return; }
+  var ok = ui.alert('Pay all', 'Record payment for ' + rows.length + ' workers, total PKR ' + total.toLocaleString() +
+                    ', for the week ending ' + thu + '?', ui.ButtonSet.YES_NO);
+  if (ok !== ui.Button.YES) return;
+  var tz = ss.getSpreadsheetTimeZone();
+  var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  var pay = ss.getSheetByName('Worker Payments');
+  var row = firstEmptyRow_(pay);
+  pay.getRange(row, 1, rows.length, 3).setValues(rows.map(function (r) { return [today, thu, r[0]]; }));
+  pay.getRange(row, 5, rows.length, 2).setValues(rows.map(function (r) { return [r[1], 'Cash']; }));
+  ss.toast(rows.length + ' payments recorded (PKR ' + total.toLocaleString() + '). Change the Mode on Worker Payments if any were by bank.', 'Paid', 8);
+}
+
 // ---------------------------------------------------------------- bulk attendance
 function getAttendanceData() {
   var ss = SpreadsheetApp.getActive();
@@ -488,6 +526,12 @@ function setupButtons() {
   var addS = Utilities.newBlob(Utilities.base64Decode(BTN_ADD_SMALL), 'image/png', 'add_s.png');
   var attS = Utilities.newBlob(Utilities.base64Decode(BTN_ATT_SMALL), 'image/png', 'att_s.png');
   var weekS = Utilities.newBlob(Utilities.base64Decode(BTN_WEEK_SMALL), 'image/png', 'week_s.png');
+  var payS = Utilities.newBlob(Utilities.base64Decode(BTN_PAY_SMALL), 'image/png', 'pay_s.png');
+  var wpay = ss.getSheetByName('Weekly Pay');
+  if (wpay) {
+    removeButtons_(wpay);
+    wpay.insertImage(payS, 6, 1, 2, 2).setWidth(100).setHeight(30).assignScript('payWeek');
+  }
   FORM_SHEETS.forEach(function (name) {
     var sh = ss.getSheetByName(name);
     if (!sh) return;
@@ -532,6 +576,6 @@ function removeButtons_(sh) {
   sh.getImages().forEach(function (img) {
     var s = '';
     try { s = img.getScript(); } catch (e) {}
-    if (s && (s.indexOf('form_') === 0 || s === 'openAttendanceForm' || s === 'startNewWeek')) img.remove();
+    if (s && (s.indexOf('form_') === 0 || s === 'openAttendanceForm' || s === 'startNewWeek' || s === 'payWeek')) img.remove();
   });
 }

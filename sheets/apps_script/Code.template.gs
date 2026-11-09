@@ -8,7 +8,7 @@
 
 // Tabs that get a form. The form is built from the tab's header row, dropdowns and formats.
 var FORM_SHEETS = [
-  'Weekly Attendance', 'Labour Attendance', 'Labour Advances', 'Site Expenses', 'Daily Diary',
+  'Weekly Attendance', 'Worker Payments', 'Labour Advances', 'Site Expenses', 'Daily Diary',
   'Supplier Invoices', 'Purchase Orders', 'Goods Receipts', 'Requisitions',
   'Measurements', 'RA Bills', 'Receipts', 'Change Events',
   'Projects', 'Workers', 'Parties', 'Budget', 'BOQ', 'Cost Codes',
@@ -20,16 +20,17 @@ var BTN_ATT = '__BTN_ATT__';
 var BTN_ADD_SMALL = '__BTN_ADD_SMALL__';
 var BTN_ATT_SMALL = '__BTN_ATT_SMALL__';
 var BTN_WEEK_SMALL = '__BTN_WEEK_SMALL__';
+var BTN_PAY_SMALL = '__BTN_PAY_SMALL__';
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
   ui.createMenu('Forms')
     .addItem('Start new week (Weekly Attendance)', 'startNewWeek')
     .addItem('Weekly Attendance row', 'form_Weekly_Attendance')
-    .addItem('Mark attendance for all workers (daily tab)', 'openAttendanceForm')
+    .addItem('Pay all balances for the week on Weekly Pay', 'payWeek')
+    .addItem('Record one payment', 'form_Worker_Payments')
     .addItem('Add entry to this tab', 'openFormForActiveSheet')
     .addSeparator()
-    .addItem('Labour Attendance (one worker)', 'form_Labour_Attendance')
     .addItem('Labour Advance', 'form_Labour_Advances')
     .addItem('Site Expense', 'form_Site_Expenses')
     .addItem('Daily Diary', 'form_Daily_Diary')
@@ -49,7 +50,7 @@ function onOpen() {
 
 // Menu and button targets (Apps Script needs one named function per target).
 function form_Weekly_Attendance() { openForm('Weekly Attendance'); }
-function form_Labour_Attendance() { openForm('Labour Attendance'); }
+function form_Worker_Payments() { openForm('Worker Payments'); }
 function form_Labour_Advances() { openForm('Labour Advances'); }
 function form_Site_Expenses() { openForm('Site Expenses'); }
 function form_Daily_Diary() { openForm('Daily Diary'); }
@@ -366,6 +367,43 @@ function startNewWeek() {
   ss.toast(ids.length + ' workers added for the week ending ' + thu + '. Mark P, H, A or L for each day.', 'New week', 8);
 }
 
+
+// Record a payment for every worker who still has a balance in the week shown on Weekly Pay.
+function payWeek() {
+  var ss = SpreadsheetApp.getActive();
+  var ui = SpreadsheetApp.getUi();
+  var wp = ss.getSheetByName('Weekly Pay');
+  var thu = wp.getRange('B2').getDisplayValue().slice(-10);
+  var project = wp.getRange('B3').getDisplayValue();
+  var sh = ss.getSheetByName('Weekly Attendance');
+  var h = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  var iName = h.indexOf('Worker'), iProj = h.indexOf('Main project'), iBal = h.indexOf('Balance to pay (PKR) (auto)');
+  if (iName < 0 || iBal < 0) { ui.alert('Weekly Attendance columns not found.'); return; }
+  var last = Math.max(sh.getLastRow(), 2);
+  var disp = sh.getRange(2, 1, last - 1, sh.getLastColumn()).getDisplayValues();
+  var vals = sh.getRange(2, iBal + 1, last - 1, 1).getValues();
+  var rows = [], total = 0;
+  for (var i = 0; i < disp.length; i++) {
+    if (disp[i][0].slice(-10) !== thu) continue;
+    if (project && disp[i][iProj] !== project) continue;
+    var bal = Number(vals[i][0]) || 0;
+    if (bal <= 0) continue;
+    rows.push([disp[i][iName], bal]);
+    total += bal;
+  }
+  if (!rows.length) { ui.alert('Nothing to pay for the week ending ' + thu + (project ? ' on ' + project : '') + '.'); return; }
+  var ok = ui.alert('Pay all', 'Record payment for ' + rows.length + ' workers, total PKR ' + total.toLocaleString() +
+                    ', for the week ending ' + thu + '?', ui.ButtonSet.YES_NO);
+  if (ok !== ui.Button.YES) return;
+  var tz = ss.getSpreadsheetTimeZone();
+  var today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  var pay = ss.getSheetByName('Worker Payments');
+  var row = firstEmptyRow_(pay);
+  pay.getRange(row, 1, rows.length, 3).setValues(rows.map(function (r) { return [today, thu, r[0]]; }));
+  pay.getRange(row, 5, rows.length, 2).setValues(rows.map(function (r) { return [r[1], 'Cash']; }));
+  ss.toast(rows.length + ' payments recorded (PKR ' + total.toLocaleString() + '). Change the Mode on Worker Payments if any were by bank.', 'Paid', 8);
+}
+
 // ---------------------------------------------------------------- bulk attendance
 function getAttendanceData() {
   var ss = SpreadsheetApp.getActive();
@@ -488,6 +526,12 @@ function setupButtons() {
   var addS = Utilities.newBlob(Utilities.base64Decode(BTN_ADD_SMALL), 'image/png', 'add_s.png');
   var attS = Utilities.newBlob(Utilities.base64Decode(BTN_ATT_SMALL), 'image/png', 'att_s.png');
   var weekS = Utilities.newBlob(Utilities.base64Decode(BTN_WEEK_SMALL), 'image/png', 'week_s.png');
+  var payS = Utilities.newBlob(Utilities.base64Decode(BTN_PAY_SMALL), 'image/png', 'pay_s.png');
+  var wpay = ss.getSheetByName('Weekly Pay');
+  if (wpay) {
+    removeButtons_(wpay);
+    wpay.insertImage(payS, 6, 1, 2, 2).setWidth(100).setHeight(30).assignScript('payWeek');
+  }
   FORM_SHEETS.forEach(function (name) {
     var sh = ss.getSheetByName(name);
     if (!sh) return;
@@ -532,6 +576,6 @@ function removeButtons_(sh) {
   sh.getImages().forEach(function (img) {
     var s = '';
     try { s = img.getScript(); } catch (e) {}
-    if (s && (s.indexOf('form_') === 0 || s === 'openAttendanceForm' || s === 'startNewWeek')) img.remove();
+    if (s && (s.indexOf('form_') === 0 || s === 'openAttendanceForm' || s === 'startNewWeek' || s === 'payWeek')) img.remove();
   });
 }
