@@ -356,10 +356,14 @@ function setupButtons() {
     for (var r = 0; r < values.length; r++) {
       var label = values[r][0];
       if (FORM_SHEETS.indexOf(label) >= 0) {
-        home.insertImage(add, 3, r + 1).setWidth(120).setHeight(26).assignScript(fnName_(label));
+        // sits exactly over the green "+ Add" mock button in column C
+        home.insertImage(addS, 3, r + 1, 2, 2).setWidth(106).setHeight(26).assignScript(fnName_(label));
+        if (label === 'Labour Attendance') {
+          // over the "Mark all" mock button in column D
+          home.insertImage(attS, 4, r + 1, 2, 2).setWidth(106).setHeight(26).assignScript('openAttendanceForm');
+        }
       }
     }
-    home.insertImage(att, 3, 4).setWidth(150).setHeight(28).assignScript('openAttendanceForm');
   }
   SpreadsheetApp.getUi().alert('Buttons added: a green + Add button in the top-left corner of every entry tab, and next to each name on Home. Click one to open its form. (Buttons work on a computer; on the phone app use the Forms menu instead.)');
 }
