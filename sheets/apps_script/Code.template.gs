@@ -315,6 +315,48 @@ var FORM_HTML =
   '</script></body></html>';
 
 
+
+// Runs by itself whenever someone edits the sheet.
+// Weekly Attendance: picking a worker fills an empty Week ending with the coming Thursday
+// and an empty Main project with the worker's usual project.
+// Worker Payments: picking a worker fills an empty Date paid with today and Week ending with the latest Thursday.
+function onEdit(e) {
+  try {
+    var sh = e.range.getSheet();
+    var name = sh.getName();
+    if (e.range.getRow() < 2) return;
+    var headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+    var cWorker = headers.indexOf('Worker') + 1;
+    if (!cWorker || e.range.getColumn() > cWorker || e.range.getLastColumn() < cWorker) return;
+    var tz = e.source.getSpreadsheetTimeZone();
+    var iso = Number(Utilities.formatDate(new Date(), tz, 'u'));  // 1 = Monday ... 7 = Sunday
+    var day = 86400000, now = new Date().getTime();
+    var nextThu = Utilities.formatDate(new Date(now + ((4 - iso + 7) % 7) * day), tz, 'yyyy-MM-dd');
+    var lastThu = Utilities.formatDate(new Date(now - ((iso - 4 + 7) % 7) * day), tz, 'yyyy-MM-dd');
+    for (var r = e.range.getRow(); r <= e.range.getLastRow(); r++) {
+      var worker = sh.getRange(r, cWorker).getValue();
+      if (!worker) continue;
+      if (name === 'Weekly Attendance') {
+        if (sh.getRange(r, 1).getValue() === '') sh.getRange(r, 1).setValue(nextThu);
+        var cProj = headers.indexOf('Main project') + 1;
+        if (cProj && sh.getRange(r, cProj).getValue() === '') {
+          var w = e.source.getSheetByName('Workers');
+          var wv = w.getRange(1, 1, w.getLastRow(), w.getLastColumn()).getDisplayValues();
+          var iN = wv[0].indexOf('Name'), iP = wv[0].indexOf('Usual project');
+          for (var k = 1; k < wv.length; k++) {
+            if (wv[k][iN] === worker && wv[k][iP]) { sh.getRange(r, cProj).setValue(wv[k][iP]); break; }
+          }
+        }
+      } else if (name === 'Worker Payments') {
+        if (sh.getRange(r, 1).getValue() === '') sh.getRange(r, 1).setValue(Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd'));
+        if (sh.getRange(r, 2).getValue() === '') sh.getRange(r, 2).setValue(lastThu);
+      }
+    }
+  } catch (err) {
+    // never block typing because of a helper error
+  }
+}
+
 // ---------------------------------------------------------------- weekly attendance
 // Weeks run Friday to Thursday; wages are paid on Thursday.
 function nextThursday_() {
