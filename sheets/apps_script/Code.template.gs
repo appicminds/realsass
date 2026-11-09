@@ -17,6 +17,8 @@ var FORM_SHEETS = [
 
 var BTN_ADD = '__BTN_ADD__';
 var BTN_ATT = '__BTN_ATT__';
+var BTN_ADD_SMALL = '__BTN_ADD_SMALL__';
+var BTN_ATT_SMALL = '__BTN_ATT_SMALL__';
 
 function onOpen() {
   var ui = SpreadsheetApp.getUi();
@@ -131,10 +133,7 @@ function firstEmptyRow_(sh) {
 
 function toCell_(v, type) {
   if (v === '' || v === null || v === undefined) return '';
-  if (type === 'date') {
-    var p = String(v).split('-');
-    return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
-  }
+  if (type === 'date') return String(v);  // yyyy-mm-dd text; Sheets turns it into a date in the sheet's time zone
   if (type === 'number') return Number(v);
   if (type === 'percent') return Number(v) / 100;
   return v;
@@ -250,16 +249,14 @@ function saveAttendance(payload) {
     var cDate = col('Date'), cProj = col('Project'), cW = col('Worker ID'), cSt = col('Status'), cSh = col('Shift'),
         cHrs = col('Hours worked (blank = full day)'), cOt = col('Overtime hours'), cWork = col('Work / location'),
         cCode = col('Cost code'), cBy = col('Marked by');
-    var p = payload.date.split('-');
-    var date = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+    if (!payload.date || !payload.project) throw new Error('Pick a date and a project.');
+    var date = payload.date;  // yyyy-mm-dd text; Sheets turns it into a date
     // existing rows for that date + shift, to avoid duplicates
     var last = Math.max(sh.getLastRow(), 2);
-    var data = sh.getRange(2, 1, last - 1, Math.max(cW, cSh)).getValues();
+    var data = sh.getRange(2, 1, last - 1, Math.max(cW, cSh)).getDisplayValues();
     var existing = {};
     data.forEach(function (r) {
-      if (r[cDate - 1] instanceof Date && r[cDate - 1].getTime() === date.getTime() && r[cSh - 1] === payload.shift) {
-        existing[r[cW - 1]] = true;
-      }
+      if (r[cDate - 1] === date && r[cSh - 1] === payload.shift) existing[r[cW - 1]] = true;
     });
     var saved = 0, skipped = [];
     var row = firstEmptyRow_(sh);
@@ -301,8 +298,8 @@ var ATT_HTML =
   '<div><label>Cost code</label><select id=code></select></div>' +
   '<div><label>Marked by</label><input id=by></div></div>' +
   '<label><input type=checkbox id=all style="width:auto" onchange="filter()"> Show workers from all projects</label>' +
-  '<div style="margin:6px 0">Set everyone to: <a href="#" onclick="setAll(\'Present\')">Present</a> | ' +
-  '<a href="#" onclick="setAll(\'Absent\')">Absent</a> | <a href="#" onclick="setAll(\'\')">Not on site</a></div>' +
+  '<div style="margin:6px 0">Set everyone to: <a href="#" onclick="return setAll(\'Present\')">Present</a> | ' +
+  '<a href="#" onclick="return setAll(\'Absent\')">Absent</a> | <a href="#" onclick="return setAll(\'\')">Not on site</a></div>' +
   '<table><thead><tr><th>Worker</th><th>Trade</th><th>Status</th><th>Hours (blank = full day)</th><th>Overtime hrs</th></tr></thead><tbody id=tb></tbody></table>' +
   '<div id="msg"></div>' +
   '<div class="bar"><button class="save" onclick="send()">Save attendance</button>' +
@@ -336,16 +333,20 @@ function setupButtons() {
   var ss = SpreadsheetApp.getActive();
   var add = Utilities.newBlob(Utilities.base64Decode(BTN_ADD), 'image/png', 'add.png');
   var att = Utilities.newBlob(Utilities.base64Decode(BTN_ATT), 'image/png', 'att.png');
+  var addS = Utilities.newBlob(Utilities.base64Decode(BTN_ADD_SMALL), 'image/png', 'add_s.png');
+  var attS = Utilities.newBlob(Utilities.base64Decode(BTN_ATT_SMALL), 'image/png', 'att_s.png');
   FORM_SHEETS.forEach(function (name) {
     var sh = ss.getSheetByName(name);
     if (!sh) return;
     removeButtons_(sh);
-    var col = sh.getLastColumn() + 1;
-    var img = sh.insertImage(add, col, 1);
-    img.setWidth(150).setHeight(32).assignScript(fnName_(name));
+    // Make the header row taller, push header text to the top, and put the button under it in A1
+    // (row 1 and column A are frozen, so the button stays visible while scrolling).
+    sh.setRowHeight(1, 92);
+    sh.getRange(1, 1, 1, sh.getLastColumn()).setVerticalAlignment('top');
+    var w = Math.max(60, Math.min(sh.getColumnWidth(1) - 6, 96));
+    sh.insertImage(addS, 1, 1, 3, 58).setWidth(w).setHeight(30).assignScript(fnName_(name));
     if (name === 'Labour Attendance') {
-      var img2 = sh.insertImage(att, col + 2, 1);
-      img2.setWidth(150).setHeight(32).assignScript('openAttendanceForm');
+      sh.insertImage(attS, 2, 1, 3, 58).setWidth(96).setHeight(30).assignScript('openAttendanceForm');
     }
   });
   var home = ss.getSheetByName('Home');
@@ -358,9 +359,9 @@ function setupButtons() {
         home.insertImage(add, 3, r + 1).setWidth(120).setHeight(26).assignScript(fnName_(label));
       }
     }
-    home.insertImage(att, 4, 5).setWidth(150).setHeight(32).assignScript('openAttendanceForm');
+    home.insertImage(att, 3, 4).setWidth(150).setHeight(28).assignScript('openAttendanceForm');
   }
-  SpreadsheetApp.getUi().alert('Buttons added. Click a button to open its form. (Buttons work on a computer; on the phone app use the Forms menu instead.)');
+  SpreadsheetApp.getUi().alert('Buttons added: a green + Add button in the top-left corner of every entry tab, and next to each name on Home. Click one to open its form. (Buttons work on a computer; on the phone app use the Forms menu instead.)');
 }
 
 function removeButtons_(sh) {
