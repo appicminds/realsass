@@ -365,7 +365,11 @@ function setupButtons() {
       }
     }
   }
+  try {
   SpreadsheetApp.getUi().alert('Buttons added: a green + Add button in the top-left corner of every entry tab, and next to each name on Home. Click one to open its form. (Buttons work on a computer; on the phone app use the Forms menu instead.)');
+  } catch (e) {
+    Logger.log('Buttons added.');  // run from the script editor: no pop-up there
+  }
 }
 
 function removeButtons_(sh) {
