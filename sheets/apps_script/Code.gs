@@ -8,7 +8,7 @@
 
 // Tabs that get a form. The form is built from the tab's header row, dropdowns and formats.
 var FORM_SHEETS = [
-  'Weekly Attendance', 'Worker Payments', 'Labour Advances', 'Site Expenses', 'Daily Diary',
+  'Weekly Attendance', 'Worker Payments', 'Site Expenses', 'Daily Diary',
   'Supplier Invoices', 'Purchase Orders', 'Goods Receipts', 'Requisitions',
   'Measurements', 'RA Bills', 'Receipts', 'Change Events',
   'Projects', 'Workers', 'Parties', 'Budget', 'BOQ', 'Cost Codes',
@@ -31,7 +31,6 @@ function onOpen() {
     .addItem('Record one payment', 'form_Worker_Payments')
     .addItem('Add entry to this tab', 'openFormForActiveSheet')
     .addSeparator()
-    .addItem('Labour Advance', 'form_Labour_Advances')
     .addItem('Site Expense', 'form_Site_Expenses')
     .addItem('Daily Diary', 'form_Daily_Diary')
     .addItem('Supplier Invoice', 'form_Supplier_Invoices')
